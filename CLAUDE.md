@@ -272,3 +272,12 @@ Backend secrets configured in `wrangler.toml` (vars) and `.dev.vars` (secrets):
 - Database → Cloudflare D1
 - Recordings → Cloudflare R2
 - CI/CD via GitHub Actions (`.github/workflows/ci.yml` and `deploy.yml`)
+
+## Issue & Contribution Guidelines
+
+When creating GitHub Issues (bug reports, feature requests, questions, etc.), always use the
+**Issue template** at `.github/ISSUE_TEMPLATE/issue.yml`. Do not open blank issues — the template
+ensures all necessary context (reproduction steps, environment, use case) is captured upfront.
+
+For contribution workflows, commit conventions, branch naming, and the PR checklist, refer to
+`CONTRIBUTING.md` at the repository root.

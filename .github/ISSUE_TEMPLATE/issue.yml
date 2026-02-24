@@ -1,0 +1,112 @@
+name: Issue 報告
+description: バグ報告・機能提案・その他の問い合わせ
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Issue を作成していただきありがとうございます。
+        送信前に、[既存の Issue](../issues) を検索して重複がないか確認してください。
+        また、セキュリティ上の脆弱性は公開 Issue ではなくメンテナーに直接ご連絡ください。
+
+  - type: dropdown
+    id: issue-kind
+    attributes:
+      label: Issue の種類
+      description: 最も近いものを選択してください
+      options:
+        - バグ報告 (Bug Report)
+        - 機能提案 (Feature Request)
+        - パフォーマンス問題 (Performance Issue)
+        - ドキュメント改善 (Documentation)
+        - 質問・相談 (Question / Discussion)
+        - その他 (Other)
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 概要
+      description: 問題や提案の内容を簡潔に説明してください
+      placeholder: |
+        例 (バグ): 発言キューに参加すると、ページをリロードした後に自分の順番が消える
+        例 (機能提案): 発言ログをCSVでエクスポートできるようにしてほしい
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: 再現手順 (バグ報告の場合)
+      description: 問題を再現するための手順を記載してください。機能提案や質問の場合はスキップして構いません。
+      placeholder: |
+        1. ルームを作成し、参加者としてログインする
+        2. 発言キューに参加する
+        3. ページをリロードする
+        4. 発言キューから自分の名前が消えている
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: 期待される動作
+      description: 本来どう動くべきか説明してください
+      placeholder: リロード後もリカバリーコードで再参加した場合、発言キューの順番が維持されるべき
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: 実際の動作 (バグ報告の場合)
+      description: 実際に何が起きているかを説明してください
+      placeholder: リロード後、発言キューから名前が消え、再度キューに並ぶ必要がある
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: ユースケース・背景 (機能提案の場合)
+      description: なぜこの機能が必要か、どのような場面で使うかを教えてください
+      placeholder: |
+        自治体の市民討議では熟議後に発言記録を行政文書として保存する必要があり、
+        CSVエクスポートがあると議事録作成の手間を大幅に削減できます
+
+  - type: input
+    id: version
+    attributes:
+      label: バージョン・環境
+      description: 発生したブランチ名・コミットハッシュ、またはデプロイ環境を記載してください
+      placeholder: "例: main @ a1b2c3d / Cloudflare Workers 本番環境"
+
+  - type: dropdown
+    id: browsers
+    attributes:
+      label: ブラウザ (フロントエンドの問題の場合)
+      description: 問題が発生したブラウザをすべて選択してください
+      multiple: true
+      options:
+        - Chrome / Chromium
+        - Firefox
+        - Safari
+        - Edge
+        - その他 / 不明
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 補足情報
+      description: スクリーンショット、エラーログ、関連 Issue など、追加情報があれば記載してください
+      placeholder: |
+        - コンソールエラー: "TypeError: Cannot read properties of undefined (reading 'queue')"
+        - 関連 Issue: #42
+        - スクリーンショット: (画像を貼り付けてください)
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 送信前チェック
+      options:
+        - label: 既存の Issue を検索し、重複がないことを確認しました
+          required: true
+        - label: 最新の `main` ブランチで問題が再現することを確認しました (バグ報告の場合)
+          required: false
+        - label: セキュリティ上の脆弱性ではないことを確認しました
+          required: true

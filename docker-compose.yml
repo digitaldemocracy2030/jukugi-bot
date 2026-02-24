@@ -40,6 +40,7 @@ services:
       - STORAGE_ACCESS_KEY=${STORAGE_ACCESS_KEY:-minioadmin}
       - STORAGE_SECRET_KEY=${STORAGE_SECRET_KEY:-minioadmin}
       - STORAGE_PUBLIC_URL=${STORAGE_PUBLIC_URL:-http://localhost:9000}
+      - TRANSCRIPTION_AGENT_NAME=${TRANSCRIPTION_AGENT_NAME:-transcription-agent}
     depends_on:
       livekit-server:
         condition: service_started
@@ -81,6 +82,8 @@ services:
           address: redis:6379
         keys:
           devkey: secret
+        agent:
+          enabled: true
         webhook:
           urls:
             - http://backend:8787/api/webhooks/livekit
@@ -161,6 +164,26 @@ services:
         mc mb myminio/recordings --ignore-existing
         mc anonymous set download myminio/recordings
         echo "Bucket 'recordings' created and configured."
+    networks:
+      - app-network
+
+  transcription-agent:
+    build:
+      context: .
+      dockerfile: apps/transcription-agent/Dockerfile
+    container_name: my-app-transcription-agent
+    profiles:
+      - transcription
+    environment:
+      - LIVEKIT_URL=${LIVEKIT_URL:-http://livekit-server:7880}
+      - LIVEKIT_API_KEY=${LIVEKIT_API_KEY:-devkey}
+      - LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET:-secret}
+      - DEEPGRAM_API_KEY=${DEEPGRAM_API_KEY}
+      - ADMIN_API_KEY=${ADMIN_API_KEY:-my-local-admin-key-12345}
+      - BACKEND_URL=http://backend:8787
+    depends_on:
+      livekit-server:
+        condition: service_started
     networks:
       - app-network
 

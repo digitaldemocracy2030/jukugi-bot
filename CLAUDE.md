@@ -66,7 +66,11 @@ apps/
       root.tsx          # Layout and error boundary
       routes.ts         # Route configuration
       routes/           # React Router route components (home.tsx, room.tsx)
-      components/       # UI components (shadcn/ui) + room-specific components
+      components/       # UI components
+        design-system/  # OSODP Design System (use this for all UI)
+        ui/             # shadcn/ui primitives (do not use directly)
+        room/           # Room-specific components
+        admin/          # Admin-specific components
       hooks/            # Custom React hooks (participant, room metadata, LiveKit)
       lib/              # Utilities
       types/            # TypeScript type definitions
@@ -208,7 +212,11 @@ Each phase type (`video` / `discussion` / `voting` / `survey`) has strict per-ty
 - Never edit files under `src/api/gen/` — they will be overwritten on next generation.
 
 ### Frontend Components
-- Prefer **shared components** in `app/components/ui/` (shadcn/ui) and `app/components/room/`.
+- **Always use the Design System (`app/components/design-system/`) for all frontend UI implementation.**
+  Do not use `components/ui/` (shadcn/ui primitives) directly — always go through design-system.
+  See `app/components/design-system/GUIDE.md` for details.
+- Build pages (`app/routes/`) and feature components (`room/`, `admin/`) by composing
+  design-system components.
 - **Avoid inline `style={{...}}`** and **avoid writing Tailwind utility classes directly in
   page-level route files** (`app/routes/`). Extract repeated patterns into named components.
 - New UI patterns must be added as reusable components, not copy-pasted across pages.

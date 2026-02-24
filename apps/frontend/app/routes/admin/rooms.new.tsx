@@ -5,11 +5,11 @@ import {
 	Alert,
 	Button,
 	FormField,
+	FormSection,
 	Input,
 	PageHeader,
 	Stack,
 	Textarea,
-	Typography,
 } from "~/components/design-system";
 
 export function meta() {
@@ -49,50 +49,49 @@ export default function AdminRoomsNewPage() {
 	}
 
 	return (
-		<div className="max-w-lg">
+		<div className="max-w-2xl">
 			<Stack direction="vertical" gap={6}>
 				<PageHeader
 					title="新規ルーム作成"
 					backHref="/admin"
-					breadcrumbs={[{ label: "ルーム一覧", href: "/admin" }, { label: "新規作成" }]}
+					breadcrumbs={[{ label: "Dashboard", href: "/admin" }, { label: "新規作成" }]}
 				/>
 
-				<div className="rounded-xl border bg-card shadow-sm">
-					<div className="p-6 pb-2">
-						<Typography variant="h4">基本情報</Typography>
-					</div>
-					<div className="p-6 pt-4">
-						<form onSubmit={handleSubmit}>
-							<Stack direction="vertical" gap={4}>
-								<FormField
-									label="スラッグ"
-									required
-									htmlFor="slug"
-									description="URLに使われます（小文字英数字・ハイフンのみ）"
-								>
-									<Input
-										id="slug"
-										name="slug"
-										placeholder="my-room"
-										pattern="[a-z0-9-]+"
-										title="小文字英数字とハイフンのみ"
+				<div className="rounded-xl border bg-card shadow-sm p-6">
+					<form onSubmit={handleSubmit}>
+						<Stack direction="vertical" gap={0}>
+							<FormSection title="基本情報" description="ルームのタイトルとURLスラッグを設定します">
+								<Stack direction="vertical" gap={4}>
+									<FormField label="タイトル" required htmlFor="title">
+										<Input id="title" name="title" placeholder="第1回 市民討議会" required />
+									</FormField>
+									<FormField
+										label="スラッグ"
 										required
-									/>
-								</FormField>
+										htmlFor="slug"
+										description="URLに使われます（小文字英数字・ハイフンのみ）"
+									>
+										<Input
+											id="slug"
+											name="slug"
+											placeholder="my-room"
+											pattern="[a-z0-9-]+"
+											title="小文字英数字とハイフンのみ"
+											required
+										/>
+									</FormField>
+									<FormField label="説明" htmlFor="description">
+										<Textarea
+											id="description"
+											name="description"
+											minRows={3}
+											placeholder="セッションの概要を記入..."
+										/>
+									</FormField>
+								</Stack>
+							</FormSection>
 
-								<FormField label="タイトル" required htmlFor="title">
-									<Input id="title" name="title" placeholder="第1回 市民討議会" required />
-								</FormField>
-
-								<FormField label="説明" htmlFor="description">
-									<Textarea
-										id="description"
-										name="description"
-										minRows={3}
-										placeholder="セッションの概要を記入..."
-									/>
-								</FormField>
-
+							<FormSection title="参加者設定" description="参加人数の上限を設定します">
 								<FormField label="最大参加者数" htmlFor="maxParticipants">
 									<Input
 										id="maxParticipants"
@@ -103,20 +102,20 @@ export default function AdminRoomsNewPage() {
 										defaultValue={10}
 									/>
 								</FormField>
+							</FormSection>
 
-								{error && <Alert variant="destructive">{error}</Alert>}
+							{error && <Alert variant="destructive">{error}</Alert>}
 
-								<Stack direction="horizontal" gap={3} className="pt-2">
-									<Button type="submit" variant="primary" loading={isPending}>
-										作成
-									</Button>
-									<Button type="button" variant="outline" onClick={() => navigate("/admin")}>
-										キャンセル
-									</Button>
-								</Stack>
+							<Stack direction="horizontal" gap={3} className="pt-4">
+								<Button type="submit" variant="primary" loading={isPending}>
+									ルームを作成
+								</Button>
+								<Button type="button" variant="outline" onClick={() => navigate("/admin")}>
+									キャンセル
+								</Button>
 							</Stack>
-						</form>
-					</div>
+						</Stack>
+					</form>
 				</div>
 			</Stack>
 		</div>

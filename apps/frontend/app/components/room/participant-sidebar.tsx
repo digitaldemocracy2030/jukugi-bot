@@ -1,12 +1,14 @@
 import { useParticipants } from "@livekit/components-react";
-import type { Participant } from "livekit-client";
+import { type Participant, Track } from "livekit-client";
 import {
 	usePostApiRoomsRoomIdInterruptParticipantIdEnd,
 	usePostApiRoomsRoomIdQueueNext,
 	usePostApiRoomsRoomIdQueueSkip,
 } from "../../../src/api/gen/breakoutDeliberationOSAPI";
 import type { RoomMetadata } from "../../types/room-metadata";
-import { Badge, Button, Stack, StatusIndicator, Typography } from "../design-system";
+import { Button, Stack, Typography } from "../design-system";
+import type { ParticipantData } from "../design-system/meeting/participant-list";
+import { ParticipantListItem } from "../design-system/meeting/participant-list-item";
 
 type ParticipantStatus = "speaking" | "interrupting" | "queued" | "idle";
 
@@ -20,16 +22,6 @@ function getStatus(participant: Participant, metadata: RoomMetadata | null): Par
 	return "idle";
 }
 
-const STATUS_MAP: Record<
-	ParticipantStatus,
-	{ indicator: "speaking" | "busy" | "away" | "offline"; label: string }
-> = {
-	speaking: { indicator: "speaking", label: "発言中" },
-	interrupting: { indicator: "busy", label: "割り込み中" },
-	queued: { indicator: "away", label: "挙手中" },
-	idle: { indicator: "offline", label: "待機中" },
-};
-
 type ParticipantRole = "facilitator" | "participant";
 
 function getRole(participant: Participant): ParticipantRole {
@@ -41,22 +33,42 @@ function getRole(participant: Participant): ParticipantRole {
 	}
 }
 
+function isMuted(participant: Participant): boolean {
+	const micPub = participant.getTrackPublication(Track.Source.Microphone);
+	return !micPub || micPub.isMuted;
+}
+
 type ParticipantSidebarProps = {
 	metadata: RoomMetadata | null;
 	roomId: string;
 	isFacilitator: boolean;
+	currentParticipantId?: string;
 };
 
-export function ParticipantSidebar({ metadata, roomId, isFacilitator }: ParticipantSidebarProps) {
+export function ParticipantSidebar({
+	metadata,
+	roomId,
+	isFacilitator,
+	currentParticipantId,
+}: ParticipantSidebarProps) {
 	const participants = useParticipants();
 
 	const nextSpeakerMutation = usePostApiRoomsRoomIdQueueNext();
 	const skipSpeakerMutation = usePostApiRoomsRoomIdQueueSkip();
 	const endInterruptionMutation = usePostApiRoomsRoomIdInterruptParticipantIdEnd();
 
+	const participantData: ParticipantData[] = participants.map((p) => ({
+		id: p.identity,
+		displayName: p.name ?? p.identity,
+		role: getRole(p),
+		status: getStatus(p, metadata),
+		isMuted: isMuted(p),
+	}));
+
 	return (
-		<aside className="flex flex-col w-60 shrink-0 border-l bg-card h-full overflow-y-auto">
-			<div className="p-3 border-b">
+		<aside className="flex flex-col h-full border-l bg-card">
+			{/* Header */}
+			<div className="px-3 py-2.5 border-b">
 				<Typography variant="label">参加者 ({participants.length})</Typography>
 			</div>
 
@@ -64,69 +76,64 @@ export function ParticipantSidebar({ metadata, roomId, isFacilitator }: Particip
 			{isFacilitator && (
 				<div className="p-3 border-b">
 					<Stack direction="vertical" gap={2}>
-						<Typography variant="caption" weight="medium" className="uppercase tracking-wide">
+						<Typography variant="caption" className="uppercase tracking-wide">
 							ファシリテーター操作
 						</Typography>
-						<Button
-							size="sm"
-							variant="outline"
-							fullWidth
-							onClick={() => nextSpeakerMutation.mutate({ roomId, data: {} })}
-						>
-							次の発言者
-						</Button>
-						<Button
-							size="sm"
-							variant="outline"
-							fullWidth
-							onClick={() => skipSpeakerMutation.mutate({ roomId })}
-						>
-							スキップ
-						</Button>
+						<Stack direction="horizontal" gap={2}>
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={() => nextSpeakerMutation.mutate({ roomId, data: {} })}
+							>
+								次の発言者
+							</Button>
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={() => skipSpeakerMutation.mutate({ roomId })}
+							>
+								スキップ
+							</Button>
+						</Stack>
 					</Stack>
 				</div>
 			)}
 
-			{/* Participant list */}
-			<ul className="flex-1 p-2 flex flex-col gap-1">
-				{participants.map((p) => {
-					const status = getStatus(p, metadata);
-					const role = getRole(p);
-					const statusConfig = STATUS_MAP[status];
+			{/* Participant list using design-system component */}
+			<div className="flex-1 overflow-y-auto p-1">
+				{participantData.map((p) => {
 					const interruption = metadata?.speakerQueue.interruptions.find(
-						(i) => i.participantId === p.identity,
+						(i) => i.participantId === p.id,
 					);
 
 					return (
-						<li
-							key={p.identity}
-							className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors"
-						>
-							<StatusIndicator status={statusConfig.indicator} size="sm" />
-							<span className="flex-1 text-sm truncate">{p.name ?? p.identity}</span>
-							{role === "facilitator" && (
-								<Badge variant="subtle" colorScheme="primary" size="sm">
-									F
-								</Badge>
-							)}
-							{isFacilitator && status === "interrupting" && interruption && (
-								<Button
-									size="xs"
-									variant="destructive"
-									onClick={() =>
-										endInterruptionMutation.mutate({
-											roomId,
-											participantId: p.identity,
-										})
-									}
-								>
-									終了
-								</Button>
-							)}
-						</li>
+						<ParticipantListItem
+							key={p.id}
+							displayName={p.displayName}
+							role={p.role}
+							status={p.status}
+							isMuted={p.isMuted}
+							isMe={p.id === currentParticipantId}
+							actions={
+								isFacilitator && p.status === "interrupting" && interruption ? (
+									<Button
+										size="xs"
+										variant="destructive"
+										onClick={() =>
+											endInterruptionMutation.mutate({
+												roomId,
+												participantId: p.id,
+											})
+										}
+									>
+										終了
+									</Button>
+								) : undefined
+							}
+						/>
 					);
 				})}
-			</ul>
+			</div>
 		</aside>
 	);
 }

@@ -1,8 +1,34 @@
-import { useLocalParticipant, useParticipants, useTracks } from "@livekit/components-react";
+import type { TrackReferenceOrPlaceholder } from "@livekit/components-react";
+import {
+	useLocalParticipant,
+	useParticipants,
+	useTracks,
+	VideoTrack,
+} from "@livekit/components-react";
 import { Track } from "livekit-client";
 import type { RoomMetadata } from "../../types/room-metadata";
+import { Avatar, Typography } from "../design-system";
+import { VideoGrid } from "../design-system/meeting/video-grid";
+import { VideoTile } from "../design-system/meeting/video-tile";
 import { MediaControls } from "./media-controls";
-import { ParticipantVideoTile } from "./participant-video-tile";
+
+function hasVideoTrack(trackRef: TrackReferenceOrPlaceholder): boolean {
+	return (
+		trackRef.publication !== undefined &&
+		!trackRef.publication.isMuted &&
+		trackRef.source !== Track.Source.Unknown
+	);
+}
+
+function TileVideoContent({ trackRef }: { trackRef: TrackReferenceOrPlaceholder }) {
+	if (!hasVideoTrack(trackRef)) return null;
+	return (
+		<VideoTrack
+			trackRef={trackRef as Parameters<typeof VideoTrack>[0]["trackRef"]}
+			className="w-full h-full object-cover"
+		/>
+	);
+}
 
 export function VideoStage({
 	metadata,
@@ -41,51 +67,65 @@ export function VideoStage({
 
 	const selfTrack = allTracks.find((t) => t.participant.identity === localParticipant.identity);
 
+	const speakerName = currentSpeakerId ? resolveDisplayName(currentSpeakerId) : "";
+
 	return (
 		<div className="flex flex-col gap-2 w-full">
-			<div className="flex gap-2 h-64">
-				{/* メインステージ */}
-				<div className="flex-1 relative">
-					{speakerTrack ? (
-						<ParticipantVideoTile
-							trackRef={speakerTrack}
-							displayName={resolveDisplayName(speakerTrack.participant.identity)}
-							isCurrentSpeaker
-							variant="main"
-						/>
-					) : (
-						<div className="w-full h-full rounded-lg bg-muted flex items-center justify-center">
-							<p className="text-muted-foreground text-sm">現在の発言者はいません</p>
-						</div>
-					)}
-				</div>
-				{/* サムネイルストリップ */}
-				{otherTracks.length > 0 && (
-					<div className="flex flex-col gap-1 overflow-y-auto max-h-full w-28 shrink-0">
-						{otherTracks.map((t) => (
-							<ParticipantVideoTile
+			{/* Video area with spotlight layout */}
+			<div className="h-64">
+				<VideoGrid
+					layout="spotlight"
+					spotlightContent={
+						speakerTrack ? (
+							<VideoTile displayName={speakerName} isSpeaking={true} layout="fill">
+								<TileVideoContent trackRef={speakerTrack} />
+							</VideoTile>
+						) : (
+							<VideoTile displayName="" layout="fill">
+								<div className="flex items-center justify-center w-full h-full">
+									<Typography variant="body-sm" color="muted">
+										現在の発言者はいません
+									</Typography>
+								</div>
+							</VideoTile>
+						)
+					}
+				>
+					{otherTracks.map((t) => {
+						const name = resolveDisplayName(t.participant.identity);
+						return (
+							<VideoTile
 								key={t.participant.identity}
-								trackRef={t}
-								displayName={resolveDisplayName(t.participant.identity)}
-								variant="thumbnail"
-							/>
-						))}
-					</div>
-				)}
+								displayName={name}
+								layout="fill"
+								aspectRatio="16:9"
+							>
+								{hasVideoTrack(t) ? (
+									<VideoTrack
+										trackRef={t as Parameters<typeof VideoTrack>[0]["trackRef"]}
+										className="w-full h-full object-cover"
+									/>
+								) : undefined}
+							</VideoTile>
+						);
+					})}
+				</VideoGrid>
 			</div>
-			{/* セルフビューバー */}
-			<div className="flex items-center gap-3 px-2 py-1.5 border rounded-lg bg-card">
+
+			{/* Self-view + media controls bar */}
+			<div className="flex items-center gap-3 px-3 py-2 border rounded-lg bg-card">
 				<MediaControls micAllowed={micAllowed} />
 				<div className="flex items-center gap-2 ml-auto">
-					<span className="text-xs text-muted-foreground">あなた:</span>
-					{selfTrack ? (
-						<ParticipantVideoTile
-							trackRef={selfTrack}
-							displayName={resolveDisplayName(localParticipant.identity)}
-							variant="thumbnail"
-						/>
+					<Typography variant="caption">あなた</Typography>
+					{selfTrack && hasVideoTrack(selfTrack) ? (
+						<div className="w-20 h-14 rounded-md overflow-hidden bg-muted">
+							<VideoTrack
+								trackRef={selfTrack as Parameters<typeof VideoTrack>[0]["trackRef"]}
+								className="w-full h-full object-cover"
+							/>
+						</div>
 					) : (
-						<span className="text-sm">{resolveDisplayName(localParticipant.identity)}</span>
+						<Avatar name={resolveDisplayName(localParticipant.identity)} size="sm" />
 					)}
 				</div>
 			</div>

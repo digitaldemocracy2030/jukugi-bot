@@ -1,8 +1,18 @@
+import type { ReactNode } from "react";
 import { useState } from "react";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { useGetApiRoomsSlug } from "../../src/api/gen/breakoutDeliberationOSAPI";
 import { RoomStatus } from "../../src/api/models";
-import { Button, Spinner, Stack, Typography } from "../components/design-system";
+import {
+	Alert,
+	Badge,
+	Button,
+	Container,
+	Divider,
+	Spinner,
+	Stack,
+	Typography,
+} from "../components/design-system";
 import { LiveRoom } from "../components/room/live-room";
 import { Lobby } from "../components/room/lobby";
 
@@ -12,14 +22,44 @@ type ConnectionState =
 	| { status: "connected"; token: string; livekitUrl: string }
 	| { status: "ended" };
 
-function parseLoadError(err: unknown): string {
+function parseLoadError(err: unknown): { message: string; isNotFound: boolean } {
 	if (err && typeof err === "object" && "message" in err) {
 		const msg = String((err as { message: unknown }).message);
 		if (msg.toLowerCase().includes("not found") || msg.includes("404")) {
-			return "ルームが見つかりません。URLをご確認ください。";
+			return {
+				message: "ルームが見つかりません。URLをご確認ください。",
+				isNotFound: true,
+			};
 		}
 	}
-	return "ルーム情報の取得に失敗しました。通信状況をご確認ください。";
+	return {
+		message: "ルーム情報の取得に失敗しました。通信状況をご確認ください。",
+		isNotFound: false,
+	};
+}
+
+function RoomStateCard({ children }: { children: ReactNode }) {
+	return (
+		<div className="min-h-screen bg-background flex items-center justify-center p-4">
+			<Container maxWidth="sm" padding="none">
+				<Stack direction="vertical" align="center" gap={6} className="w-full">
+					<Stack direction="horizontal" align="center" gap={2}>
+						<div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+							<span className="text-primary font-bold text-body-sm">OS</span>
+						</div>
+						<Typography variant="label" color="muted">
+							Breakout Deliberation OS
+						</Typography>
+					</Stack>
+					<div className="w-full rounded-xl border border-border bg-card p-8 shadow-sm">
+						<Stack direction="vertical" gap={5}>
+							{children}
+						</Stack>
+					</div>
+				</Stack>
+			</Container>
+		</div>
+	);
 }
 
 export function meta() {
@@ -55,36 +95,53 @@ export default function RoomPage() {
 
 	if (!slug) {
 		return (
-			<Stack direction="vertical" align="center" justify="center" className="min-h-screen" gap={4}>
-				<Typography variant="body" color="destructive" align="center" className="max-w-sm">
-					ルームが見つかりません
-				</Typography>
-			</Stack>
+			<RoomStateCard>
+				<Alert variant="destructive" title="ルームが見つかりません">
+					URLにルームIDが含まれていません。正しいURLからアクセスしてください。
+				</Alert>
+				<Button variant="outline" asChild className="w-full">
+					<Link to="/">ホームに戻る</Link>
+				</Button>
+			</RoomStateCard>
 		);
 	}
 
 	if (isLoading) {
 		return (
-			<Stack direction="vertical" align="center" justify="center" className="min-h-screen" gap={3}>
-				<Spinner size="lg" label="読み込み中..." />
-			</Stack>
+			<RoomStateCard>
+				<Stack direction="vertical" align="center" gap={4} className="py-6">
+					<Spinner size="lg" />
+					<Stack direction="vertical" align="center" gap={1}>
+						<Typography variant="h4" align="center">
+							ルームを準備しています
+						</Typography>
+						<Typography variant="body-sm" color="muted" align="center">
+							しばらくお待ちください...
+						</Typography>
+					</Stack>
+				</Stack>
+			</RoomStateCard>
 		);
 	}
 
 	if (isError) {
-		const message = parseLoadError(error);
-		const isNotFound = message.includes("見つかりません");
+		const { message, isNotFound } = parseLoadError(error);
 		return (
-			<Stack direction="vertical" align="center" justify="center" className="min-h-screen" gap={4}>
-				<Typography variant="body" color="destructive" align="center" className="max-w-sm">
+			<RoomStateCard>
+				<Alert variant={isNotFound ? "destructive" : "warning"} title="エラー">
 					{message}
-				</Typography>
-				{!isNotFound && (
-					<Button variant="outline" onClick={() => refetch()}>
-						再試行
+				</Alert>
+				<Stack direction="horizontal" gap={3} justify="center">
+					<Button variant="outline" asChild>
+						<Link to="/">ホームに戻る</Link>
 					</Button>
-				)}
-			</Stack>
+					{!isNotFound && (
+						<Button variant="primary" onClick={() => refetch()}>
+							再試行
+						</Button>
+					)}
+				</Stack>
+			</RoomStateCard>
 		);
 	}
 
@@ -97,12 +154,28 @@ export default function RoomPage() {
 
 	if (connState.status === "ended" || (isRoomEnded && connState.status === "lobby")) {
 		return (
-			<Stack direction="vertical" align="center" justify="center" className="min-h-screen" gap={2}>
-				<Typography variant="h2">{room.title}</Typography>
-				<Typography variant="body" color="muted">
-					このセッションは終了しました
-				</Typography>
-			</Stack>
+			<RoomStateCard>
+				<Stack direction="vertical" align="center" gap={3}>
+					<Badge colorScheme="default" variant="subtle">
+						終了
+					</Badge>
+					<Typography variant="h3" align="center">
+						{room.title}
+					</Typography>
+				</Stack>
+				<Divider />
+				<Stack direction="vertical" align="center" gap={2}>
+					<Typography variant="body" color="muted" align="center">
+						このセッションは終了しました。
+					</Typography>
+					<Typography variant="body-sm" color="muted" align="center">
+						ご参加ありがとうございました。
+					</Typography>
+				</Stack>
+				<Button variant="outline" asChild className="w-full">
+					<Link to="/">ホームに戻る</Link>
+				</Button>
+			</RoomStateCard>
 		);
 	}
 
@@ -112,9 +185,28 @@ export default function RoomPage() {
 
 	if (connState.status === "connecting") {
 		return (
-			<Stack direction="vertical" align="center" justify="center" className="min-h-screen" gap={3}>
-				<Spinner size="lg" label="接続中..." />
-			</Stack>
+			<RoomStateCard>
+				<Stack direction="vertical" align="center" gap={4}>
+					<Typography variant="h3" align="center">
+						{room.title}
+					</Typography>
+					{room.description && (
+						<Typography variant="body-sm" color="muted" align="center">
+							{room.description}
+						</Typography>
+					)}
+					<Badge colorScheme="info" variant="subtle">
+						接続中
+					</Badge>
+				</Stack>
+				<Divider />
+				<Stack direction="vertical" align="center" gap={4} className="py-4">
+					<Spinner size="lg" />
+					<Typography variant="body" color="muted" align="center">
+						セッションに接続しています...
+					</Typography>
+				</Stack>
+			</RoomStateCard>
 		);
 	}
 

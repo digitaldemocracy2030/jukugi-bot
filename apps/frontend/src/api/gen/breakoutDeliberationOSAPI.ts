@@ -42,6 +42,8 @@ import type {
 	DeleteApiRoomsRoomIdTransitionProposalsProposalId401,
 	DeleteApiRoomsRoomIdTransitionProposalsProposalId404,
 	GetApiParticipantsMe401,
+	GetApiRooms401,
+	GetApiRoomsParams,
 	GetApiRoomsRoomIdPhases404,
 	GetApiRoomsRoomIdRecordings401,
 	GetApiRoomsRoomIdRecordings404,
@@ -518,6 +520,156 @@ export const usePostApiParticipantsRecover = <
 > => {
 	return useMutation(getPostApiParticipantsRecoverMutationOptions(options), queryClient);
 };
+
+/**
+ * @summary List all rooms
+ */
+export type getApiRoomsResponse200 = {
+	data: Room[];
+	status: 200;
+};
+
+export type getApiRoomsResponse401 = {
+	data: GetApiRooms401;
+	status: 401;
+};
+
+export type getApiRoomsResponseSuccess = getApiRoomsResponse200 & {
+	headers: Headers;
+};
+export type getApiRoomsResponseError = getApiRoomsResponse401 & {
+	headers: Headers;
+};
+
+export type getApiRoomsResponse = getApiRoomsResponseSuccess | getApiRoomsResponseError;
+
+export const getGetApiRoomsUrl = (params?: GetApiRoomsParams) => {
+	const normalizedParams = new URLSearchParams();
+
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
+
+	const stringifiedParams = normalizedParams.toString();
+
+	return stringifiedParams.length > 0 ? `/api/rooms?${stringifiedParams}` : `/api/rooms`;
+};
+
+export const getApiRooms = async (
+	params?: GetApiRoomsParams,
+	options?: RequestInit,
+): Promise<getApiRoomsResponse> => {
+	return customFetch<getApiRoomsResponse>(getGetApiRoomsUrl(params), {
+		...options,
+		method: "GET",
+	});
+};
+
+export const getGetApiRoomsQueryKey = (params?: GetApiRoomsParams) => {
+	return [`/api/rooms`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetApiRoomsQueryOptions = <
+	TData = Awaited<ReturnType<typeof getApiRooms>>,
+	TError = ErrorType<GetApiRooms401>,
+>(
+	params?: GetApiRoomsParams,
+	options?: {
+		query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiRooms>>, TError, TData>>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
+
+	const queryKey = queryOptions?.queryKey ?? getGetApiRoomsQueryKey(params);
+
+	const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiRooms>>> = ({ signal }) =>
+		getApiRooms(params, { signal, ...requestOptions });
+
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getApiRooms>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiRoomsQueryResult = NonNullable<Awaited<ReturnType<typeof getApiRooms>>>;
+export type GetApiRoomsQueryError = ErrorType<GetApiRooms401>;
+
+export function useGetApiRooms<
+	TData = Awaited<ReturnType<typeof getApiRooms>>,
+	TError = ErrorType<GetApiRooms401>,
+>(
+	params: undefined | GetApiRoomsParams,
+	options: {
+		query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiRooms>>, TError, TData>> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getApiRooms>>,
+					TError,
+					Awaited<ReturnType<typeof getApiRooms>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiRooms<
+	TData = Awaited<ReturnType<typeof getApiRooms>>,
+	TError = ErrorType<GetApiRooms401>,
+>(
+	params?: GetApiRoomsParams,
+	options?: {
+		query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiRooms>>, TError, TData>> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getApiRooms>>,
+					TError,
+					Awaited<ReturnType<typeof getApiRooms>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiRooms<
+	TData = Awaited<ReturnType<typeof getApiRooms>>,
+	TError = ErrorType<GetApiRooms401>,
+>(
+	params?: GetApiRoomsParams,
+	options?: {
+		query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiRooms>>, TError, TData>>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary List all rooms
+ */
+
+export function useGetApiRooms<
+	TData = Awaited<ReturnType<typeof getApiRooms>>,
+	TError = ErrorType<GetApiRooms401>,
+>(
+	params?: GetApiRoomsParams,
+	options?: {
+		query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiRooms>>, TError, TData>>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+	const queryOptions = getGetApiRoomsQueryOptions(params, options);
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Create a new room

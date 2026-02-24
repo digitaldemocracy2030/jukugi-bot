@@ -2,6 +2,7 @@ import { swaggerUI } from "@hono/swagger-ui";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { initLiveKit } from "./livekit/room-service";
 import participantsRoute from "./routes/participants";
 import phasesRoute from "./routes/phases";
 import recordingRoute from "./routes/recording";
@@ -42,6 +43,10 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>({
 
 app.use("/*", logger());
 app.use("/*", cors({ origin: "http://localhost:5173" }));
+app.use("/*", async (c, next) => {
+	initLiveKit(c.env);
+	await next();
+});
 
 app.get("/", (c) => c.json({ message: "Hello Hono!" }));
 

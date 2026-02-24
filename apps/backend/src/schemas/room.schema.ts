@@ -50,7 +50,34 @@ export const RoomSlugParamsSchema = z
 	})
 	.openapi("RoomSlugParams");
 
+export const RoomListQuerySchema = z
+	.object({
+		status: RoomStatusEnum.optional(),
+	})
+	.openapi("RoomListQuery");
+
 // Route definitions
+export const listRoomsRoute = createRoute({
+	method: "get",
+	path: "/api/rooms",
+	tags: ["Rooms"],
+	summary: "List all rooms",
+	security: [{ AdminKeyAuth: [] }],
+	request: {
+		query: RoomListQuerySchema,
+	},
+	responses: {
+		200: {
+			content: { "application/json": { schema: z.array(RoomSchema) } },
+			description: "Room list",
+		},
+		401: {
+			content: { "application/json": { schema: z.object({ error: z.string() }) } },
+			description: "Unauthorized",
+		},
+	},
+});
+
 export const createRoomRoute = createRoute({
 	method: "post",
 	path: "/api/rooms",

@@ -10,11 +10,11 @@
 
 @theme {
 	--font-sans:
-		"Geist Mono", ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas,
-		"DejaVu Sans Mono", monospace;
+		"Geist Mono", ui-monospace, "Cascadia Code", "Source Code Pro", Menlo,
+		Consolas, "DejaVu Sans Mono", monospace;
 	--font-mono:
-		"Geist Mono", ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas,
-		"DejaVu Sans Mono", monospace;
+		"Geist Mono", ui-monospace, "Cascadia Code", "Source Code Pro", Menlo,
+		Consolas, "DejaVu Sans Mono", monospace;
 }
 
 html,

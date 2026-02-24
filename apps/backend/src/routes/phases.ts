@@ -5,19 +5,19 @@ import { phases, rooms } from "../db/schema";
 import { generateId } from "../lib/id";
 import { adminAuth } from "../middleware/admin-auth";
 import {
+	addPhaseRoute,
 	DiscussionPhaseConfigSchema,
 	DiscussionPhaseFeatureFlagsSchema,
+	deletePhaseRoute,
+	listPhasesRoute,
+	reorderPhasesRoute,
 	SurveyPhaseConfigSchema,
 	SurveyPhaseFeatureFlagsSchema,
+	updatePhaseRoute,
 	VideoPhaseConfigSchema,
 	VideoPhaseFeatureFlagsSchema,
 	VotingPhaseConfigSchema,
 	VotingPhaseFeatureFlagsSchema,
-	addPhaseRoute,
-	deletePhaseRoute,
-	listPhasesRoute,
-	reorderPhasesRoute,
-	updatePhaseRoute,
 } from "../schemas/phase.schema";
 
 type Bindings = {
@@ -55,9 +55,7 @@ function formatPhase(phase: typeof phases.$inferSelect) {
 				...base,
 				type: "discussion" as const,
 				config: DiscussionPhaseConfigSchema.catch({}).parse(phase.config ?? {}),
-				featureFlags: DiscussionPhaseFeatureFlagsSchema.catch({}).parse(
-					phase.featureFlags ?? {},
-				),
+				featureFlags: DiscussionPhaseFeatureFlagsSchema.catch({}).parse(phase.featureFlags ?? {}),
 			};
 		case "voting":
 			return {

@@ -20,7 +20,6 @@ import {
 	serializeMetadata,
 } from "../livekit/metadata";
 import {
-	createRoomServiceClient,
 	ensureLiveKitRoom,
 	updateRoomMetadata,
 } from "../livekit/room-service";
@@ -143,20 +142,14 @@ app.openapi(activateRoomRoute, async (c) => {
 	const initialMetadata = buildInitialMetadata(roomId);
 
 	// Create LiveKit room with initial metadata
-	const client = createRoomServiceClient({
-		url: c.env.LIVEKIT_URL,
-		apiKey: c.env.LIVEKIT_API_KEY,
-		apiSecret: c.env.LIVEKIT_API_SECRET,
-	});
-
-	await ensureLiveKitRoom(client, roomName, {
+	await ensureLiveKitRoom(roomName, {
 		maxParticipants: room.maxParticipants,
 		metadata: serializeMetadata(initialMetadata),
 	});
 
 	// Explicitly update metadata in case the LiveKit room already existed
 	// (createRoom does not overwrite metadata on an existing room)
-	await updateRoomMetadata(client, roomName, serializeMetadata(initialMetadata));
+	await updateRoomMetadata(roomName, serializeMetadata(initialMetadata));
 
 	// Update room status to active
 	await db
@@ -271,12 +264,6 @@ app.openapi(phaseTransitionRoute, async (c) => {
 		startedAt: now,
 	});
 
-	const client = createRoomServiceClient({
-		url: c.env.LIVEKIT_URL,
-		apiKey: c.env.LIVEKIT_API_KEY,
-		apiSecret: c.env.LIVEKIT_API_SECRET,
-	});
-
 	const roomName = livekitRoomName(roomId);
 
 	// Build updated metadata for the new phase (transitionProposal cleared by buildPhaseMetadata)
@@ -284,7 +271,7 @@ app.openapi(phaseTransitionRoute, async (c) => {
 	const baseMetadata = buildInitialMetadata(roomId);
 	const newMetadata = buildPhaseMetadata(baseMetadata, phaseId, phase.type, flags);
 
-	await updateRoomMetadata(client, roomName, serializeMetadata(newMetadata));
+	await updateRoomMetadata(roomName, serializeMetadata(newMetadata));
 
 	return c.json(
 		{

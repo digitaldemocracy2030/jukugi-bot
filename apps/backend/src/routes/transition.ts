@@ -15,7 +15,7 @@ import {
 	serializeMetadata,
 	updateTransitionProposal,
 } from "../livekit/metadata";
-import { createRoomServiceClient, updateRoomMetadata } from "../livekit/room-service";
+import { updateRoomMetadata } from "../livekit/room-service";
 import { adminAuth } from "../middleware/admin-auth";
 import {
 	CastTransitionVoteSchema,
@@ -27,9 +27,6 @@ type Bindings = {
 	DB: D1Database;
 	ADMIN_API_KEY: string;
 	ENVIRONMENT: string;
-	LIVEKIT_URL: string;
-	LIVEKIT_API_KEY: string;
-	LIVEKIT_API_SECRET: string;
 };
 
 const app = new OpenAPIHono<{ Bindings: Bindings }>();
@@ -266,11 +263,6 @@ app.openapi(createProposalRoute, async (c) => {
 
 	// Update LiveKit metadata
 	try {
-		const client = createRoomServiceClient({
-			url: c.env.LIVEKIT_URL,
-			apiKey: c.env.LIVEKIT_API_KEY,
-			apiSecret: c.env.LIVEKIT_API_SECRET,
-		});
 		const roomName = livekitRoomName(roomId);
 		const baseMetadata = buildInitialMetadata(roomId);
 		const currentFlags = phaseFeatureFlagsToRoom(flags);
@@ -285,7 +277,7 @@ app.openapi(createProposalRoute, async (c) => {
 			requiredThreshold: threshold,
 			expiresAt: expiresAt ? expiresAt.toISOString() : null,
 		});
-		await updateRoomMetadata(client, roomName, serializeMetadata(updatedMetadata));
+		await updateRoomMetadata(roomName, serializeMetadata(updatedMetadata));
 	} catch {
 		// Non-fatal
 	}
@@ -469,11 +461,6 @@ app.openapi(castVoteRoute, async (c) => {
 					.where(eq(phases.id, targetPhaseId))
 					.get();
 				if (targetPhase) {
-					const client = createRoomServiceClient({
-						url: c.env.LIVEKIT_URL,
-						apiKey: c.env.LIVEKIT_API_KEY,
-						apiSecret: c.env.LIVEKIT_API_SECRET,
-					});
 					const roomName = livekitRoomName(roomId);
 					const flags = phaseFeatureFlagsToRoom(targetPhase.featureFlags ?? {});
 					const baseMetadata = buildInitialMetadata(roomId);
@@ -483,7 +470,7 @@ app.openapi(castVoteRoute, async (c) => {
 						targetPhase.type,
 						flags,
 					);
-					await updateRoomMetadata(client, roomName, serializeMetadata(newMetadata));
+					await updateRoomMetadata(roomName, serializeMetadata(newMetadata));
 				}
 			} catch {
 				// Non-fatal
@@ -494,11 +481,6 @@ app.openapi(castVoteRoute, async (c) => {
 		try {
 			const phase = await db.select().from(phases).where(eq(phases.id, proposal.fromPhaseId)).get();
 			if (phase) {
-				const client = createRoomServiceClient({
-					url: c.env.LIVEKIT_URL,
-					apiKey: c.env.LIVEKIT_API_KEY,
-					apiSecret: c.env.LIVEKIT_API_SECRET,
-				});
 				const roomName = livekitRoomName(roomId);
 				const flags = phaseFeatureFlagsToRoom(phase.featureFlags ?? {});
 				const baseMetadata = buildInitialMetadata(roomId);
@@ -513,7 +495,7 @@ app.openapi(castVoteRoute, async (c) => {
 					requiredThreshold: proposal.requiredThreshold,
 					expiresAt: proposal.expiresAt ? proposal.expiresAt.toISOString() : null,
 				});
-				await updateRoomMetadata(client, roomName, serializeMetadata(updatedMetadata));
+				await updateRoomMetadata(roomName, serializeMetadata(updatedMetadata));
 			}
 		} catch {
 			// Non-fatal
@@ -563,16 +545,11 @@ app.openapi(rejectProposalRoute, async (c) => {
 	try {
 		const phase = await db.select().from(phases).where(eq(phases.id, proposal.fromPhaseId)).get();
 		if (phase) {
-			const client = createRoomServiceClient({
-				url: c.env.LIVEKIT_URL,
-				apiKey: c.env.LIVEKIT_API_KEY,
-				apiSecret: c.env.LIVEKIT_API_SECRET,
-			});
 			const roomName = livekitRoomName(roomId);
 			const flags = phaseFeatureFlagsToRoom(phase.featureFlags ?? {});
 			const baseMetadata = buildInitialMetadata(roomId);
 			const metadata = buildPhaseMetadata(baseMetadata, proposal.fromPhaseId, phase.type, flags);
-			await updateRoomMetadata(client, roomName, serializeMetadata(metadata));
+			await updateRoomMetadata(roomName, serializeMetadata(metadata));
 		}
 	} catch {
 		// Non-fatal

@@ -13,7 +13,8 @@
 		"jsx": "react-jsx",
 		"rootDirs": [".", "./.react-router/types"],
 		"paths": {
-			"~/*": ["./app/*"]
+			"~/*": ["./app/*"],
+			"~/api/*": ["./src/api/*"]
 		}
 	}
 }

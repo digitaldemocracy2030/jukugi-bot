@@ -11,9 +11,8 @@ export const TransitionFeatureFlagsSchema = z.object({
 });
 
 // --- Per-type FeatureFlags schemas ---
-export const VideoPhaseFeatureFlagsSchema = TransitionFeatureFlagsSchema.strict().openapi(
-	"VideoPhaseFeatureFlags",
-);
+export const VideoPhaseFeatureFlagsSchema =
+	TransitionFeatureFlagsSchema.strict().openapi("VideoPhaseFeatureFlags");
 
 export const DiscussionPhaseFeatureFlagsSchema = TransitionFeatureFlagsSchema.extend({
 	canSpeak: z.boolean().optional(),
@@ -32,9 +31,8 @@ export const VotingPhaseFeatureFlagsSchema = TransitionFeatureFlagsSchema.extend
 	.strict()
 	.openapi("VotingPhaseFeatureFlags");
 
-export const SurveyPhaseFeatureFlagsSchema = TransitionFeatureFlagsSchema.strict().openapi(
-	"SurveyPhaseFeatureFlags",
-);
+export const SurveyPhaseFeatureFlagsSchema =
+	TransitionFeatureFlagsSchema.strict().openapi("SurveyPhaseFeatureFlags");
 
 // --- Per-type Config schemas ---
 export const VideoPhaseConfigSchema = z

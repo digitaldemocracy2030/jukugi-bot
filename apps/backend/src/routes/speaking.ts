@@ -3,9 +3,9 @@ import { and, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { phases, rooms, sessionParticipations, speakingLog } from "../db/schema";
 import { generateId } from "../lib/id";
-import { deserializeMetadata, serializeMetadata, updateSpeakerQueue } from "../livekit/metadata";
+import { serializeMetadata, updateSpeakerQueue } from "../livekit/metadata";
 import {
-	createRoomServiceClient,
+	fetchRoomMetadata,
 	setParticipantMicPermission,
 	updateRoomMetadata,
 } from "../livekit/room-service";
@@ -25,9 +25,6 @@ type Bindings = {
 	DB: D1Database;
 	ADMIN_API_KEY: string;
 	ENVIRONMENT: string;
-	LIVEKIT_URL: string;
-	LIVEKIT_API_KEY: string;
-	LIVEKIT_API_SECRET: string;
 };
 
 const app = new OpenAPIHono<{ Bindings: Bindings }>();
@@ -41,22 +38,6 @@ function livekitRoomName(roomId: string): string {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Fetch the current LiveKit room metadata. Returns null if room has no metadata yet.
- */
-async function fetchRoomMetadata(
-	client: ReturnType<typeof createRoomServiceClient>,
-	roomName: string,
-): Promise<RoomMetadata | null> {
-	try {
-		const lkRooms = await client.listRooms([roomName]);
-		if (!lkRooms.length) return null;
-		return deserializeMetadata(lkRooms[0].metadata);
-	} catch {
-		return null;
-	}
-}
 
 /**
  * Resolve a LiveKit identity (participants.id UUID) to its session_participations.id
@@ -146,7 +127,6 @@ async function logSpeakingEnd(
  * Returns the updated SpeakerQueue.
  */
 async function advanceToNextSpeaker(
-	client: ReturnType<typeof createRoomServiceClient>,
 	db: ReturnType<typeof drizzle>,
 	roomName: string,
 	meta: RoomMetadata,
@@ -161,7 +141,7 @@ async function advanceToNextSpeaker(
 		await logSpeakingEnd(db, prev.participantId, meta.roomId);
 		// Revoke publish permission (mute)
 		try {
-			await setParticipantMicPermission(client, roomName, prev.participantId, false);
+			await setParticipantMicPermission(roomName, prev.participantId, false);
 		} catch {
 			// participant may have left — ignore
 		}
@@ -179,7 +159,7 @@ async function advanceToNextSpeaker(
 
 		// Grant publish permission (unmute)
 		try {
-			await setParticipantMicPermission(client, roomName, next.participantId, true);
+			await setParticipantMicPermission(roomName, next.participantId, true);
 		} catch {
 			// participant may have left — move on
 			newCurrentSpeaker = null;
@@ -212,13 +192,7 @@ app.openapi(queueJoinRoute, async (c) => {
 	if (!room) return c.json({ error: "Room not found" }, 404);
 	if (room.status !== "active") return c.json({ error: "Room is not active" }, 403);
 
-	const client = createRoomServiceClient({
-		url: c.env.LIVEKIT_URL,
-		apiKey: c.env.LIVEKIT_API_KEY,
-		apiSecret: c.env.LIVEKIT_API_SECRET,
-	});
-
-	const meta = await fetchRoomMetadata(client, livekitRoomName(roomId));
+	const meta = await fetchRoomMetadata(livekitRoomName(roomId));
 	if (!meta) return c.json({ error: "Room metadata not found" }, 404);
 
 	if (!meta.featureFlags.canSpeak) {
@@ -245,19 +219,18 @@ app.openapi(queueJoinRoute, async (c) => {
 		const speakingTimeSec = phase?.featureFlags?.speakingTimeSec ?? DEFAULT_SPEAKING_TIME_SEC;
 
 		const advancedQueue = await advanceToNextSpeaker(
-			client,
-			db,
+		db,
 			livekitRoomName(roomId),
 			{ ...meta, speakerQueue: newQueue },
 			speakingTimeSec,
 		);
 		const updated = updateSpeakerQueue(meta, advancedQueue);
-		await updateRoomMetadata(client, livekitRoomName(roomId), serializeMetadata(updated));
+		await updateRoomMetadata(livekitRoomName(roomId), serializeMetadata(updated));
 		return c.json({ success: true, speakerQueue: advancedQueue }, 200);
 	}
 
 	const updated = updateSpeakerQueue(meta, newQueue);
-	await updateRoomMetadata(client, livekitRoomName(roomId), serializeMetadata(updated));
+	await updateRoomMetadata(livekitRoomName(roomId), serializeMetadata(updated));
 	return c.json({ success: true, speakerQueue: newQueue }, 200);
 });
 
@@ -271,13 +244,7 @@ app.openapi(queueLeaveRoute, async (c) => {
 	const room = await db.select().from(rooms).where(eq(rooms.id, roomId)).get();
 	if (!room) return c.json({ error: "Room not found" }, 404);
 
-	const client = createRoomServiceClient({
-		url: c.env.LIVEKIT_URL,
-		apiKey: c.env.LIVEKIT_API_KEY,
-		apiSecret: c.env.LIVEKIT_API_SECRET,
-	});
-
-	const meta = await fetchRoomMetadata(client, livekitRoomName(roomId));
+	const meta = await fetchRoomMetadata(livekitRoomName(roomId));
 	if (!meta) return c.json({ error: "Room metadata not found" }, 404);
 
 	const newQueue: SpeakerQueue = {
@@ -286,7 +253,7 @@ app.openapi(queueLeaveRoute, async (c) => {
 	};
 
 	const updated = updateSpeakerQueue(meta, newQueue);
-	await updateRoomMetadata(client, livekitRoomName(roomId), serializeMetadata(updated));
+	await updateRoomMetadata(livekitRoomName(roomId), serializeMetadata(updated));
 	return c.json({ success: true, speakerQueue: newQueue }, 200);
 });
 
@@ -302,13 +269,7 @@ app.openapi(queueNextRoute, async (c) => {
 	if (!room) return c.json({ error: "Room not found" }, 404);
 	if (room.status !== "active") return c.json({ error: "Room is not active" }, 403);
 
-	const client = createRoomServiceClient({
-		url: c.env.LIVEKIT_URL,
-		apiKey: c.env.LIVEKIT_API_KEY,
-		apiSecret: c.env.LIVEKIT_API_SECRET,
-	});
-
-	const meta = await fetchRoomMetadata(client, livekitRoomName(roomId));
+	const meta = await fetchRoomMetadata(livekitRoomName(roomId));
 	if (!meta) return c.json({ error: "Room metadata not found" }, 404);
 
 	const phase = meta.currentPhaseId
@@ -319,7 +280,6 @@ app.openapi(queueNextRoute, async (c) => {
 		body.speakingTimeSec ?? phase?.featureFlags?.speakingTimeSec ?? DEFAULT_SPEAKING_TIME_SEC;
 
 	const newQueue = await advanceToNextSpeaker(
-		client,
 		db,
 		livekitRoomName(roomId),
 		meta,
@@ -327,7 +287,7 @@ app.openapi(queueNextRoute, async (c) => {
 	);
 
 	const updated = updateSpeakerQueue(meta, newQueue);
-	await updateRoomMetadata(client, livekitRoomName(roomId), serializeMetadata(updated));
+	await updateRoomMetadata(livekitRoomName(roomId), serializeMetadata(updated));
 	return c.json({ success: true, speakerQueue: newQueue }, 200);
 });
 
@@ -342,13 +302,7 @@ app.openapi(queueSkipRoute, async (c) => {
 	if (!room) return c.json({ error: "Room not found" }, 404);
 	if (room.status !== "active") return c.json({ error: "Room is not active" }, 403);
 
-	const client = createRoomServiceClient({
-		url: c.env.LIVEKIT_URL,
-		apiKey: c.env.LIVEKIT_API_KEY,
-		apiSecret: c.env.LIVEKIT_API_SECRET,
-	});
-
-	const meta = await fetchRoomMetadata(client, livekitRoomName(roomId));
+	const meta = await fetchRoomMetadata(livekitRoomName(roomId));
 	if (!meta) return c.json({ error: "Room metadata not found" }, 404);
 
 	const phase = meta.currentPhaseId
@@ -363,7 +317,6 @@ app.openapi(queueSkipRoute, async (c) => {
 		await logSpeakingEnd(db, speakerQueue.currentSpeaker.participantId, roomId);
 		try {
 			await setParticipantMicPermission(
-				client,
 				livekitRoomName(roomId),
 				speakerQueue.currentSpeaker.participantId,
 				false,
@@ -380,7 +333,6 @@ app.openapi(queueSkipRoute, async (c) => {
 	};
 
 	const newQueue = await advanceToNextSpeaker(
-		client,
 		db,
 		livekitRoomName(roomId),
 		metaWithoutCurrent,
@@ -388,7 +340,7 @@ app.openapi(queueSkipRoute, async (c) => {
 	);
 
 	const updated = updateSpeakerQueue(meta, newQueue);
-	await updateRoomMetadata(client, livekitRoomName(roomId), serializeMetadata(updated));
+	await updateRoomMetadata(livekitRoomName(roomId), serializeMetadata(updated));
 	return c.json({ success: true, speakerQueue: newQueue }, 200);
 });
 
@@ -403,13 +355,7 @@ app.openapi(interruptRequestRoute, async (c) => {
 	if (!room) return c.json({ error: "Room not found" }, 404);
 	if (room.status !== "active") return c.json({ error: "Room is not active" }, 403);
 
-	const client = createRoomServiceClient({
-		url: c.env.LIVEKIT_URL,
-		apiKey: c.env.LIVEKIT_API_KEY,
-		apiSecret: c.env.LIVEKIT_API_SECRET,
-	});
-
-	const meta = await fetchRoomMetadata(client, livekitRoomName(roomId));
+	const meta = await fetchRoomMetadata(livekitRoomName(roomId));
 	if (!meta) return c.json({ error: "Room metadata not found" }, 404);
 
 	if (!meta.featureFlags.canInterrupt) {
@@ -497,7 +443,8 @@ app.openapi(interruptRequestRoute, async (c) => {
 
 	// Unmute the interrupter
 	try {
-		await setParticipantMicPermission(client, livekitRoomName(roomId), participantId, true);
+		await setParticipantMicPermission(
+				livekitRoomName(roomId), participantId, true);
 	} catch {
 		return c.json({ error: "Failed to unmute participant" }, 403);
 	}
@@ -508,7 +455,7 @@ app.openapi(interruptRequestRoute, async (c) => {
 	}
 
 	const updated = updateSpeakerQueue(meta, newQueue);
-	await updateRoomMetadata(client, livekitRoomName(roomId), serializeMetadata(updated));
+	await updateRoomMetadata(livekitRoomName(roomId), serializeMetadata(updated));
 	return c.json({ success: true, speakerQueue: newQueue }, 200);
 });
 
@@ -523,13 +470,7 @@ app.openapi(interruptEndRoute, async (c) => {
 	if (!room) return c.json({ error: "Room not found" }, 404);
 	if (room.status !== "active") return c.json({ error: "Room is not active" }, 403);
 
-	const client = createRoomServiceClient({
-		url: c.env.LIVEKIT_URL,
-		apiKey: c.env.LIVEKIT_API_KEY,
-		apiSecret: c.env.LIVEKIT_API_SECRET,
-	});
-
-	const meta = await fetchRoomMetadata(client, livekitRoomName(roomId));
+	const meta = await fetchRoomMetadata(livekitRoomName(roomId));
 	if (!meta) return c.json({ error: "Room metadata not found" }, 404);
 
 	const { speakerQueue } = meta;
@@ -541,7 +482,8 @@ app.openapi(interruptEndRoute, async (c) => {
 
 	// Mute the interrupter
 	try {
-		await setParticipantMicPermission(client, livekitRoomName(roomId), participantId, false);
+		await setParticipantMicPermission(
+				livekitRoomName(roomId), participantId, false);
 	} catch {
 		// ignore if participant left
 	}
@@ -552,7 +494,7 @@ app.openapi(interruptEndRoute, async (c) => {
 	};
 
 	const updated = updateSpeakerQueue(meta, newQueue);
-	await updateRoomMetadata(client, livekitRoomName(roomId), serializeMetadata(updated));
+	await updateRoomMetadata(livekitRoomName(roomId), serializeMetadata(updated));
 	return c.json({ success: true, speakerQueue: newQueue }, 200);
 });
 
@@ -567,13 +509,7 @@ app.openapi(speakingCheckRoute, async (c) => {
 	if (!room) return c.json({ error: "Room not found" }, 404);
 	if (room.status !== "active") return c.json({ error: "Room is not active" }, 403);
 
-	const client = createRoomServiceClient({
-		url: c.env.LIVEKIT_URL,
-		apiKey: c.env.LIVEKIT_API_KEY,
-		apiSecret: c.env.LIVEKIT_API_SECRET,
-	});
-
-	const meta = await fetchRoomMetadata(client, livekitRoomName(roomId));
+	const meta = await fetchRoomMetadata(livekitRoomName(roomId));
 	if (!meta) return c.json({ error: "Room metadata not found" }, 404);
 
 	const now = Date.now();
@@ -590,8 +526,7 @@ app.openapi(speakingCheckRoute, async (c) => {
 			await logSpeakingEnd(db, interruption.participantId, roomId);
 			try {
 				await setParticipantMicPermission(
-					client,
-					livekitRoomName(roomId),
+				livekitRoomName(roomId),
 					interruption.participantId,
 					false,
 				);
@@ -612,8 +547,7 @@ app.openapi(speakingCheckRoute, async (c) => {
 		const speakingTimeSec = phase?.featureFlags?.speakingTimeSec ?? DEFAULT_SPEAKING_TIME_SEC;
 
 		speakerQueue = await advanceToNextSpeaker(
-			client,
-			db,
+		db,
 			livekitRoomName(roomId),
 			{ ...meta, speakerQueue },
 			speakingTimeSec,
@@ -622,7 +556,7 @@ app.openapi(speakingCheckRoute, async (c) => {
 
 	if (changed) {
 		const updated = updateSpeakerQueue(meta, speakerQueue);
-		await updateRoomMetadata(client, livekitRoomName(roomId), serializeMetadata(updated));
+		await updateRoomMetadata(livekitRoomName(roomId), serializeMetadata(updated));
 	}
 
 	return c.json({ success: true, speakerQueue }, 200);

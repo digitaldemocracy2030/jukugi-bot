@@ -1,16 +1,29 @@
 import { RoomServiceClient, TrackSource } from "livekit-server-sdk";
+import { deserializeMetadata } from "./metadata";
+import type { RoomMetadata } from "./types";
 
-export interface LiveKitConfig {
-	url: string;
-	apiKey: string;
-	apiSecret: string;
+/** Cloudflare Workers env bindings required for LiveKit. */
+export interface LiveKitEnv {
+	LIVEKIT_URL: string;
+	LIVEKIT_API_KEY: string;
+	LIVEKIT_API_SECRET: string;
 }
 
+let _client: RoomServiceClient | null = null;
+
 /**
- * Create a configured RoomServiceClient instance.
+ * Initialize the module-level LiveKit RoomServiceClient.
+ * Call this once per request in Hono middleware via `initLiveKit(c.env)`.
+ * CF Workers env bindings are deploy-time constants, so reinitializing each
+ * request with the same values is safe and idempotent.
  */
-export function createRoomServiceClient(config: LiveKitConfig): RoomServiceClient {
-	return new RoomServiceClient(config.url, config.apiKey, config.apiSecret);
+export function initLiveKit(env: LiveKitEnv): void {
+	_client = new RoomServiceClient(env.LIVEKIT_URL, env.LIVEKIT_API_KEY, env.LIVEKIT_API_SECRET);
+}
+
+function getClient(): RoomServiceClient {
+	if (!_client) throw new Error("LiveKit not initialized. Call initLiveKit(env) first.");
+	return _client;
 }
 
 /**
@@ -19,7 +32,6 @@ export function createRoomServiceClient(config: LiveKitConfig): RoomServiceClien
  * configure max participants and set initial metadata.
  */
 export async function ensureLiveKitRoom(
-	client: RoomServiceClient,
 	roomName: string,
 	options: {
 		maxParticipants?: number;
@@ -27,7 +39,7 @@ export async function ensureLiveKitRoom(
 		metadata?: string;
 	} = {},
 ): Promise<void> {
-	await client.createRoom({
+	await getClient().createRoom({
 		name: roomName,
 		maxParticipants: options.maxParticipants,
 		emptyTimeout: options.emptyTimeoutSeconds ?? 300,
@@ -38,12 +50,22 @@ export async function ensureLiveKitRoom(
 /**
  * Update the metadata string on an active LiveKit room.
  */
-export async function updateRoomMetadata(
-	client: RoomServiceClient,
-	roomName: string,
-	metadata: string,
-): Promise<void> {
-	await client.updateRoomMetadata(roomName, metadata);
+export async function updateRoomMetadata(roomName: string, metadata: string): Promise<void> {
+	await getClient().updateRoomMetadata(roomName, metadata);
+}
+
+/**
+ * Fetch and deserialize the current LiveKit room metadata.
+ * Returns null if the room does not exist or has no metadata.
+ */
+export async function fetchRoomMetadata(roomName: string): Promise<RoomMetadata | null> {
+	try {
+		const rooms = await getClient().listRooms([roomName]);
+		if (!rooms.length) return null;
+		return deserializeMetadata(rooms[0].metadata);
+	} catch {
+		return null;
+	}
 }
 
 /**
@@ -51,42 +73,44 @@ export async function updateRoomMetadata(
  * Used when transitioning phases (e.g. muting microphones on video phase).
  */
 export async function setParticipantMute(
-	client: RoomServiceClient,
 	roomName: string,
 	participantIdentity: string,
 	trackSid: string,
 	muted: boolean,
 ): Promise<void> {
-	await client.mutePublishedTrack(roomName, participantIdentity, trackSid, muted);
+	await getClient().mutePublishedTrack(roomName, participantIdentity, trackSid, muted);
 }
 
 /**
  * Send a data message to all participants in a room via the server.
  */
-export async function sendDataToRoom(
-	client: RoomServiceClient,
-	roomName: string,
-	data: Uint8Array,
-): Promise<void> {
-	await client.sendData(roomName, data, 0);
+export async function sendDataToRoom(roomName: string, data: Uint8Array): Promise<void> {
+	await getClient().sendData(roomName, data, 0);
 }
 
 /**
  * List all participants currently in a room.
  */
-export async function listRoomParticipants(client: RoomServiceClient, roomName: string) {
-	return client.listParticipants(roomName);
+export async function listRoomParticipants(roomName: string) {
+	return getClient().listParticipants(roomName);
+}
+
+/**
+ * Delete a LiveKit room, disconnecting all participants immediately.
+ * Throws if the room does not exist; callers should catch if needed.
+ */
+export async function deleteRoom(roomName: string): Promise<void> {
+	await getClient().deleteRoom(roomName);
 }
 
 /**
  * Remove a participant from a room.
  */
 export async function removeParticipant(
-	client: RoomServiceClient,
 	roomName: string,
 	participantIdentity: string,
 ): Promise<void> {
-	await client.removeParticipant(roomName, participantIdentity);
+	await getClient().removeParticipant(roomName, participantIdentity);
 }
 
 /**
@@ -97,12 +121,11 @@ export async function removeParticipant(
  * canMic: false → camera only (waiting / not speaking)
  */
 export async function setParticipantMicPermission(
-	client: RoomServiceClient,
 	roomName: string,
 	participantIdentity: string,
 	canMic: boolean,
 ): Promise<void> {
-	await client.updateParticipant(roomName, participantIdentity, {
+	await getClient().updateParticipant(roomName, participantIdentity, {
 		permission: {
 			canPublish: true,
 			canSubscribe: true,

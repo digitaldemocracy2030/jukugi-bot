@@ -3,11 +3,13 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { rooms } from "../db/schema";
 import { generateId } from "../lib/id";
+import { deleteRoom } from "../livekit/room-service";
 import { adminAuth } from "../middleware/admin-auth";
 import {
 	createRoomRoute,
 	deleteRoomRoute,
 	getRoomBySlugRoute,
+	listRoomsRoute,
 	updateRoomRoute,
 } from "../schemas/room.schema";
 
@@ -16,6 +18,10 @@ type Bindings = {
 	ADMIN_API_KEY: string;
 	ENVIRONMENT: string;
 };
+
+function livekitRoomName(roomId: string): string {
+	return `room-${roomId}`;
+}
 
 const app = new OpenAPIHono<{ Bindings: Bindings }>();
 
@@ -28,8 +34,19 @@ function formatRoom(room: typeof rooms.$inferSelect) {
 	};
 }
 
-// POST /api/rooms (admin)
+// GET /api/rooms (admin)
 app.use("/api/rooms", adminAuth);
+app.openapi(listRoomsRoute, async (c) => {
+	const db = drizzle(c.env.DB);
+	const { status } = c.req.valid("query");
+
+	const query = db.select().from(rooms);
+	const allRooms = status ? await query.where(eq(rooms.status, status)).all() : await query.all();
+
+	return c.json(allRooms.map(formatRoom), 200);
+});
+
+// POST /api/rooms (admin)
 app.openapi(createRoomRoute, async (c) => {
 	const db = drizzle(c.env.DB);
 	const body = c.req.valid("json");
@@ -95,6 +112,15 @@ app.openapi(updateRoomRoute, async (c) => {
 		.where(eq(rooms.id, roomId))
 		.returning()
 		.get();
+
+	// completed への移行時は LiveKit ルームを強制終了する
+	if (body.status === "completed") {
+		try {
+			await deleteRoom(livekitRoomName(roomId));
+		} catch {
+			// ルームが存在しない場合など、LiveKit 側のエラーは無視して DB 更新結果を返す
+		}
+	}
 
 	return c.json(formatRoom(updated), 200);
 });

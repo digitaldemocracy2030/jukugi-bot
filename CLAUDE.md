@@ -19,6 +19,14 @@ Breakout Deliberation OS (OSODP) — an open-source platform for small-scale del
 
 ## Commands
 
+**Always use Docker for local development:**
+
+```bash
+docker-compose up                        # Start all services (preferred)
+```
+
+Direct pnpm commands (use only when debugging outside Docker):
+
 ```bash
 pnpm install                             # Install dependencies
 pnpm dev                                 # Run both frontend (5173) and backend (8787)
@@ -28,15 +36,13 @@ pnpm biome:check                         # Lint and format check (Biome)
 pnpm biome:format                        # Auto-format with Biome
 pnpm --filter backend test               # Run backend tests (Vitest)
 pnpm --filter backend test:watch         # Run backend tests in watch mode
-pnpm --filter backend db:generate        # Generate Drizzle migrations
+pnpm --filter backend db:generate        # Generate Drizzle migrations (always use this — never write migration SQL by hand)
 pnpm --filter backend db:migrate:local   # Apply migrations locally (D1)
 pnpm --filter backend db:migrate:remote  # Apply migrations to remote D1
 pnpm --filter backend db:studio          # Open Drizzle Studio (DB GUI)
 pnpm --filter backend cf-typegen         # Regenerate Cloudflare Workers types
-pnpm --filter frontend generate:api      # Generate TypeScript API client from OpenAPI schema (Orval)
+pnpm --filter frontend generate:api      # Regenerate TypeScript API client from OpenAPI schema (Orval) — run after any backend change
 ```
-
-Docker alternative: `docker-compose up`
 
 ## Architecture
 
@@ -72,7 +78,7 @@ apps/
 - Frontend generates typed API clients from the backend's OpenAPI schema via Orval (`orval.config.ts`)
 - Backend exposes OpenAPI docs at `/api/docs` (Swagger UI) and `/api/openapi.json`
 - Database migrations are managed by Drizzle and applied via wrangler for D1
-- When you create a new migration file, use Drizzle (`db:generate`)
+- **Never write migration SQL by hand** — always use `db:generate` to auto-generate from schema changes
 
 ## Database Schema
 
@@ -168,6 +174,68 @@ Each phase type (`video` / `discussion` / `voting` / `survey`) has strict per-ty
 - `use-speaking-check` — Determine if current user is the active speaker
 - `use-transition-vote` — Manage phase transition voting UI state
 - `use-youtube-player` — YouTube embed lifecycle management
+
+## Development Rules
+
+### Development Environment
+- **Always use `docker-compose up`** for local development. Do not run `pnpm dev` directly unless
+  debugging a non-Docker-reproducible issue.
+- All environment variables must be defined in `.dev.vars` (secrets) or `wrangler.toml` (vars).
+  Never hardcode credentials or URLs in source code.
+
+### Database (Drizzle / D1)
+- **Never create migration files manually.** Always use `pnpm --filter backend db:generate` to
+  generate migrations from schema changes. Hand-written SQL migrations must not be committed.
+
+### Backend API
+- **All new endpoints must use `@hono/zod-openapi`.** Never add plain Hono routes without OpenAPI
+  registration — doing so breaks the auto-generated schema and the Orval client.
+- Every request body, query param, and response shape must have a Zod schema. No `any` types or
+  unvalidated `c.req.json()` calls in route handlers.
+
+### Backend Middleware & Shared Logic
+- Authentication (`X-Admin-Key`), RBAC, and other cross-cutting concerns must be implemented as
+  **Hono middleware** in `src/middleware/` and registered centrally in `index.ts`.
+- Never duplicate auth checks or role validation inline inside route handlers.
+- Shared singletons (DB client, LiveKit clients, etc.) must be instantiated once and accessed via
+  Hono's context (`c.env` / `c.var`) — not re-created per request.
+
+### Frontend API Client
+- **Always use Orval-generated hooks** (`src/api/gen/`) for all backend requests. Never call
+  `fetch` or `axios` directly to backend endpoints.
+- After any backend route change (new endpoint, schema change, renamed field), immediately
+  regenerate the client: `pnpm --filter frontend generate:api`.
+- Never edit files under `src/api/gen/` — they will be overwritten on next generation.
+
+### Frontend Components
+- Prefer **shared components** in `app/components/ui/` (shadcn/ui) and `app/components/room/`.
+- **Avoid inline `style={{...}}`** and **avoid writing Tailwind utility classes directly in
+  page-level route files** (`app/routes/`). Extract repeated patterns into named components.
+- New UI patterns must be added as reusable components, not copy-pasted across pages.
+- Never use `dangerouslySetInnerHTML`.
+
+### Security
+- `ADMIN_API_KEY` must never be exposed to the frontend — never include it in responses or metadata.
+- `recoveryCode` must never appear in logs or error messages.
+- Never store sensitive data in LiveKit room metadata — it is visible to all connected participants.
+
+### TanStack Query
+- Never use `useEffect` + `fetch` for data fetching — always use `useQuery` / `useMutation`.
+- Define query keys in a central factory (e.g. `lib/query-keys.ts`). Never inline raw key arrays.
+- Always set an explicit `staleTime` — the default of 0 causes excessive refetching.
+
+### Type Safety
+- No `any` types or `as any` casts. Use `unknown` + Zod `.safeParse()` at boundaries instead.
+- `@ts-ignore` / `@ts-expect-error` require an explanatory comment on the same line.
+- Use `.safeParse()` for all external input (request bodies, LiveKit metadata); use `.parse()` only for internal data you control.
+
+### Testing
+- Every new backend route must have a corresponding test in `test/`.
+- Business logic (vote tallying, speaker queue, phase transitions) must be covered by unit tests.
+
+### Error Handling
+- Never return errors with HTTP 200. Use appropriate status codes (400, 403, 404, 422, 500).
+- Use Hono's `HTTPException` or a shared error schema for all error responses. No ad-hoc `{ message: string }` returns.
 
 ## Code Style
 

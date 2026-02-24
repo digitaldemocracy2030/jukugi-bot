@@ -4,8 +4,7 @@ import { usePostApiRoomsRoomIdPhaseTransition } from "../../../../src/api/gen/br
 import { useDataMessage } from "../../../hooks/use-data-message";
 import { useYouTubePlayer } from "../../../hooks/use-youtube-player";
 import type { RoomMetadata, VideoSyncMessage } from "../../../types/room-metadata";
-import { Badge } from "../../ui/badge";
-import { Button } from "../../ui/button";
+import { Badge, Button, Stack, Typography } from "../../design-system";
 
 type VideoPhaseProps = {
 	metadata: RoomMetadata | null;
@@ -176,38 +175,44 @@ export function VideoPhase({ metadata, roomId }: VideoPhaseProps) {
 
 	if (!videoId) {
 		return (
-			<div className="flex flex-col items-center justify-center flex-1 gap-3 text-muted-foreground">
-				<p>ビデオが設定されていません</p>
+			<Stack direction="vertical" align="center" justify="center" className="flex-1" gap={3}>
+				<Typography variant="body" color="muted">
+					ビデオが設定されていません
+				</Typography>
 				{isFacilitator && (
 					<Button variant="outline" onClick={handleAdvance}>
 						次のフェーズへ
 					</Button>
 				)}
-			</div>
+			</Stack>
 		);
 	}
 
+	const statusLabel =
+		playerState === "playing"
+			? "再生中"
+			: playerState === "paused"
+				? "一時停止中"
+				: playerState === "ended"
+					? "終了"
+					: playerState === "buffering"
+						? "バッファリング中"
+						: "待機中";
+
+	const badgeColor =
+		playerState === "playing" ? "success" : playerState === "ended" ? "default" : "info";
+
 	return (
-		<div className="flex flex-col flex-1 items-center gap-4 p-4">
+		<Stack direction="vertical" align="center" gap={4} className="flex-1 p-4">
 			{/* Status / info bar */}
-			<div className="flex items-center gap-2 self-start flex-wrap">
-				<Badge variant={playerState === "playing" ? "default" : "secondary"}>
-					{playerState === "playing"
-						? "再生中"
-						: playerState === "paused"
-							? "一時停止中"
-							: playerState === "ended"
-								? "終了"
-								: playerState === "buffering"
-									? "バッファリング中"
-									: "待機中"}
+			<Stack direction="horizontal" gap={2} align="center" wrap className="self-start">
+				<Badge variant="solid" colorScheme={badgeColor}>
+					{statusLabel}
 				</Badge>
 				{autoAdvance && playerState !== "ended" && (
-					<span className="text-xs text-muted-foreground">
-						動画終了後に自動で次のフェーズへ移行します
-					</span>
+					<Typography variant="caption">動画終了後に自動で次のフェーズへ移行します</Typography>
 				)}
-			</div>
+			</Stack>
 
 			{/* Responsive YouTube embed — IFrame API replaces this div with the iframe */}
 			<div className="w-full max-w-3xl aspect-video rounded-lg overflow-hidden bg-black shadow-lg">
@@ -216,24 +221,24 @@ export function VideoPhase({ metadata, roomId }: VideoPhaseProps) {
 
 			{/* Facilitator controls */}
 			{isFacilitator && (
-				<div className="flex flex-col items-center gap-2 mt-2">
+				<Stack direction="vertical" align="center" gap={2} className="mt-2">
 					{videoEndedNotified && !autoAdvance && (
-						<p className="text-sm font-medium text-foreground">
+						<Typography variant="body" weight="medium">
 							動画が終了しました。次のフェーズへ進む準備ができたらボタンを押してください。
-						</p>
+						</Typography>
 					)}
 					<Button variant="outline" onClick={handleAdvance}>
 						次のフェーズへ進む
 					</Button>
-				</div>
+				</Stack>
 			)}
 
 			{/* Non-facilitator ended message */}
 			{(playerState === "ended" || videoEndedNotified) && !isFacilitator && (
-				<p className="text-sm text-muted-foreground">
+				<Typography variant="body" color="muted">
 					動画が終了しました。ファシリテーターの操作をお待ちください。
-				</p>
+				</Typography>
 			)}
-		</div>
+		</Stack>
 	);
 }

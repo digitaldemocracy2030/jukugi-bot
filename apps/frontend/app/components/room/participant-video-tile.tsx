@@ -2,7 +2,7 @@ import type { TrackReferenceOrPlaceholder } from "@livekit/components-react";
 import { VideoTrack } from "@livekit/components-react";
 import { Track } from "livekit-client";
 import { cn } from "~/lib/utils";
-import { Avatar, AvatarFallback } from "../ui/avatar";
+import { Avatar } from "../design-system";
 
 type Props = {
 	trackRef: TrackReferenceOrPlaceholder;
@@ -41,9 +41,7 @@ export function ParticipantVideoTile({
 				/>
 			) : (
 				<div className="flex flex-col items-center justify-center gap-1 w-full h-full">
-					<Avatar size={variant === "main" ? "lg" : "sm"}>
-						<AvatarFallback>{displayName.trim().slice(0, 2).toUpperCase()}</AvatarFallback>
-					</Avatar>
+					<Avatar name={displayName} size={variant === "main" ? "lg" : "sm"} />
 					{variant === "main" && (
 						<span className="text-xs text-muted-foreground truncate max-w-[90%]">
 							{displayName}

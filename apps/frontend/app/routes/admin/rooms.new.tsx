@@ -1,9 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { usePostApiRooms } from "~/api/gen/breakoutDeliberationOSAPI";
-import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
+import {
+	Alert,
+	Button,
+	FormField,
+	Input,
+	PageHeader,
+	Stack,
+	Textarea,
+	Typography,
+} from "~/components/design-system";
 
 export function meta() {
 	return [{ title: "ルーム作成 | OSODP Admin" }];
@@ -43,77 +50,75 @@ export default function AdminRoomsNewPage() {
 
 	return (
 		<div className="max-w-lg">
-			<h1 className="text-2xl font-bold mb-6">新規ルーム作成</h1>
-			<Card>
-				<CardHeader>
-					<CardTitle className="text-base">基本情報</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<form onSubmit={handleSubmit} className="space-y-4">
-						<div className="space-y-1.5">
-							<label className="text-sm font-medium" htmlFor="slug">
-								スラッグ <span className="text-destructive">*</span>
-							</label>
-							<Input
-								id="slug"
-								name="slug"
-								placeholder="my-room"
-								pattern="[a-z0-9-]+"
-								title="小文字英数字とハイフンのみ"
-								required
-							/>
-							<p className="text-xs text-muted-foreground">
-								URLに使われます（小文字英数字・ハイフンのみ）
-							</p>
-						</div>
+			<Stack direction="vertical" gap={6}>
+				<PageHeader
+					title="新規ルーム作成"
+					backHref="/admin"
+					breadcrumbs={[{ label: "ルーム一覧", href: "/admin" }, { label: "新規作成" }]}
+				/>
 
-						<div className="space-y-1.5">
-							<label className="text-sm font-medium" htmlFor="title">
-								タイトル <span className="text-destructive">*</span>
-							</label>
-							<Input id="title" name="title" placeholder="第1回 市民討議会" required />
-						</div>
+				<div className="rounded-xl border bg-card shadow-sm">
+					<div className="p-6 pb-2">
+						<Typography variant="h4">基本情報</Typography>
+					</div>
+					<div className="p-6 pt-4">
+						<form onSubmit={handleSubmit}>
+							<Stack direction="vertical" gap={4}>
+								<FormField
+									label="スラッグ"
+									required
+									htmlFor="slug"
+									description="URLに使われます（小文字英数字・ハイフンのみ）"
+								>
+									<Input
+										id="slug"
+										name="slug"
+										placeholder="my-room"
+										pattern="[a-z0-9-]+"
+										title="小文字英数字とハイフンのみ"
+										required
+									/>
+								</FormField>
 
-						<div className="space-y-1.5">
-							<label className="text-sm font-medium" htmlFor="description">
-								説明
-							</label>
-							<textarea
-								id="description"
-								name="description"
-								rows={3}
-								placeholder="セッションの概要を記入..."
-								className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] resize-none"
-							/>
-						</div>
+								<FormField label="タイトル" required htmlFor="title">
+									<Input id="title" name="title" placeholder="第1回 市民討議会" required />
+								</FormField>
 
-						<div className="space-y-1.5">
-							<label className="text-sm font-medium" htmlFor="maxParticipants">
-								最大参加者数
-							</label>
-							<Input
-								id="maxParticipants"
-								name="maxParticipants"
-								type="number"
-								min={2}
-								max={100}
-								defaultValue={10}
-							/>
-						</div>
+								<FormField label="説明" htmlFor="description">
+									<Textarea
+										id="description"
+										name="description"
+										minRows={3}
+										placeholder="セッションの概要を記入..."
+									/>
+								</FormField>
 
-						{error && <p className="text-sm text-destructive">{error}</p>}
+								<FormField label="最大参加者数" htmlFor="maxParticipants">
+									<Input
+										id="maxParticipants"
+										name="maxParticipants"
+										type="number"
+										min={2}
+										max={100}
+										defaultValue={10}
+									/>
+								</FormField>
 
-						<div className="flex gap-3 pt-2">
-							<Button type="submit" disabled={isPending}>
-								{isPending ? "作成中..." : "作成"}
-							</Button>
-							<Button type="button" variant="outline" onClick={() => navigate("/admin")}>
-								キャンセル
-							</Button>
-						</div>
-					</form>
-				</CardContent>
-			</Card>
+								{error && <Alert variant="destructive">{error}</Alert>}
+
+								<Stack direction="horizontal" gap={3} className="pt-2">
+									<Button type="submit" variant="primary" loading={isPending}>
+										作成
+									</Button>
+									<Button type="button" variant="outline" onClick={() => navigate("/admin")}>
+										キャンセル
+									</Button>
+								</Stack>
+							</Stack>
+						</form>
+					</div>
+				</div>
+			</Stack>
 		</div>
 	);
 }

@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link, useParams } from "react-router";
+import { useParams } from "react-router";
 import {
 	useGetApiRoomsRoomIdPhases,
 	usePostApiRoomsRoomIdInterruptParticipantIdEnd,
@@ -9,8 +9,17 @@ import {
 	usePostApiRoomsRoomIdQueueSkip,
 } from "~/api/gen/breakoutDeliberationOSAPI";
 import { PhaseTypeIcon } from "~/components/admin/PhaseTypeIcon";
-import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+	Alert,
+	Button,
+	FormField,
+	Input,
+	PageHeader,
+	Select,
+	Spinner,
+	Stack,
+	Typography,
+} from "~/components/design-system";
 
 export function meta() {
 	return [{ title: "セッション進行 | OSODP Admin" }];
@@ -80,103 +89,126 @@ export default function AdminSessionPage() {
 	}
 
 	return (
-		<div className="space-y-6">
-			<div className="flex items-center gap-3">
-				<Link
-					to={`/admin/rooms/${id}`}
-					className="text-sm text-muted-foreground hover:text-foreground"
-				>
-					← ルーム詳細
-				</Link>
-			</div>
+		<Stack direction="vertical" gap={6}>
+			<PageHeader
+				title="セッション進行"
+				backHref={`/admin/rooms/${id}`}
+				breadcrumbs={[
+					{ label: "ルーム一覧", href: "/admin" },
+					{ label: "ルーム詳細", href: `/admin/rooms/${id}` },
+					{ label: "セッション進行" },
+				]}
+			/>
 
-			<h1 className="text-2xl font-bold">セッション進行</h1>
-
-			{error && <p className="text-sm text-destructive">{error}</p>}
+			{error && (
+				<Alert variant="destructive" dismissible>
+					{error}
+				</Alert>
+			)}
 
 			{/* Phase overview & transition */}
-			<Card>
-				<CardHeader>
-					<CardTitle className="text-base">フェーズ一覧・遷移</CardTitle>
-				</CardHeader>
-				<CardContent className="space-y-4">
-					{isLoading && <p className="text-sm text-muted-foreground">読み込み中...</p>}
-					<div className="space-y-2">
-						{phases.map((phase, idx) => (
-							<div key={phase.id} className="flex items-center gap-3 rounded-md border px-4 py-3">
-								<span className="text-sm text-muted-foreground w-5 text-center">{idx + 1}</span>
-								<div className="flex-1 min-w-0">
-									<p className="font-medium text-sm">{phase.title}</p>
-									<PhaseTypeIcon type={phase.type} />
+			<div className="rounded-xl border bg-card shadow-sm">
+				<div className="p-4 border-b">
+					<Typography variant="h4">フェーズ一覧・遷移</Typography>
+				</div>
+				<div className="p-4">
+					<Stack direction="vertical" gap={4}>
+						{isLoading && (
+							<Stack direction="vertical" align="center" className="py-4">
+								<Spinner label="読み込み中..." />
+							</Stack>
+						)}
+						<Stack direction="vertical" gap={2}>
+							{phases.map((phase, idx) => (
+								<div key={phase.id} className="flex items-center gap-3 rounded-lg border px-4 py-3">
+									<Typography variant="caption" className="w-5 text-center">
+										{idx + 1}
+									</Typography>
+									<div className="flex-1 min-w-0">
+										<Typography variant="h4" className="truncate">
+											{phase.title}
+										</Typography>
+										<PhaseTypeIcon type={phase.type} />
+									</div>
 								</div>
-							</div>
-						))}
-					</div>
+							))}
+						</Stack>
 
-					{phases.length > 0 && (
-						<form onSubmit={handleForceTransition} className="flex gap-3 flex-wrap pt-2">
-							<select
-								value={selectedPhaseId}
-								onChange={(e) => setSelectedPhaseId(e.target.value)}
-								className="h-9 flex-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring"
-							>
-								<option value="">フェーズを選択...</option>
-								{phases.map((phase) => (
-									<option key={phase.id} value={phase.id}>
-										{phase.title}
-									</option>
-								))}
-							</select>
-							<Button type="submit" disabled={transitioning || !selectedPhaseId}>
-								{transitioning ? "遷移中..." : "強制遷移"}
-							</Button>
-						</form>
-					)}
-				</CardContent>
-			</Card>
+						{phases.length > 0 && (
+							<form onSubmit={handleForceTransition}>
+								<Stack direction="horizontal" gap={3} wrap className="pt-2">
+									<div className="flex-1">
+										<Select
+											value={selectedPhaseId}
+											onValueChange={setSelectedPhaseId}
+											placeholder="フェーズを選択..."
+											options={phases.map((phase) => ({
+												value: phase.id,
+												label: phase.title,
+											}))}
+										/>
+									</div>
+									<Button
+										type="submit"
+										variant="primary"
+										loading={transitioning}
+										disabled={!selectedPhaseId}
+									>
+										強制遷移
+									</Button>
+								</Stack>
+							</form>
+						)}
+					</Stack>
+				</div>
+			</div>
 
 			{/* Discussion phase controls */}
-			<Card>
-				<CardHeader>
-					<CardTitle className="text-base">議論フェーズ操作</CardTitle>
-				</CardHeader>
-				<CardContent className="space-y-4">
-					<p className="text-sm text-muted-foreground">
-						発言キューのリアルタイム状態はLiveKit接続が必要です。
-						以下のボタンからキュー操作のみ実行できます。
-					</p>
-					<div className="flex gap-3 flex-wrap">
-						<Button variant="outline" onClick={handleQueueNext} disabled={nextPending}>
-							{nextPending ? "処理中..." : "次の発言者"}
-						</Button>
-						<Button variant="outline" onClick={handleQueueSkip} disabled={skipPending}>
-							{skipPending ? "処理中..." : "スキップ"}
-						</Button>
-					</div>
-
-					<div className="pt-2">
-						<p className="text-xs font-medium text-muted-foreground mb-2">
-							割り込み強制終了（参加者ID入力）
-						</p>
-						<form onSubmit={handleEndInterrupt} className="flex gap-2">
-							<input
-								value={interruptParticipantId}
-								onChange={(e) => setInterruptParticipantId(e.target.value)}
-								placeholder="参加者ID"
-								className="h-9 flex-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring"
-							/>
-							<Button
-								type="submit"
-								variant="outline"
-								size="sm"
-								disabled={endingInterrupt || !interruptParticipantId}
-							>
-								割り込み終了
+			<div className="rounded-xl border bg-card shadow-sm">
+				<div className="p-4 border-b">
+					<Typography variant="h4">議論フェーズ操作</Typography>
+				</div>
+				<div className="p-4">
+					<Stack direction="vertical" gap={4}>
+						<Typography variant="body" color="muted">
+							発言キューのリアルタイム状態はLiveKit接続が必要です。
+							以下のボタンからキュー操作のみ実行できます。
+						</Typography>
+						<Stack direction="horizontal" gap={3} wrap>
+							<Button variant="outline" onClick={handleQueueNext} loading={nextPending}>
+								次の発言者
 							</Button>
-						</form>
-					</div>
-				</CardContent>
-			</Card>
-		</div>
+							<Button variant="outline" onClick={handleQueueSkip} loading={skipPending}>
+								スキップ
+							</Button>
+						</Stack>
+
+						<div className="pt-2">
+							<FormField label="割り込み強制終了（参加者ID入力）">
+								<form onSubmit={handleEndInterrupt}>
+									<Stack direction="horizontal" gap={2}>
+										<Input
+											value={interruptParticipantId}
+											onChange={(e) => setInterruptParticipantId(e.target.value)}
+											placeholder="参加者ID"
+											inputSize="sm"
+										/>
+										<Button
+											type="submit"
+											variant="outline"
+											size="sm"
+											loading={endingInterrupt}
+											disabled={!interruptParticipantId}
+										>
+											割り込み終了
+										</Button>
+									</Stack>
+								</form>
+							</FormField>
+						</div>
+					</Stack>
+				</div>
+			</div>
+		</Stack>
 	);
 }

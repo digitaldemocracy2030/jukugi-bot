@@ -6,8 +6,7 @@ import {
 	usePostApiRoomsRoomIdQueueSkip,
 } from "../../../src/api/gen/breakoutDeliberationOSAPI";
 import type { RoomMetadata } from "../../types/room-metadata";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
+import { Badge, Button, Stack, StatusIndicator, Typography } from "../design-system";
 
 type ParticipantStatus = "speaking" | "interrupting" | "queued" | "idle";
 
@@ -21,18 +20,14 @@ function getStatus(participant: Participant, metadata: RoomMetadata | null): Par
 	return "idle";
 }
 
-const STATUS_ICON: Record<ParticipantStatus, string> = {
-	speaking: "🎤",
-	interrupting: "⚡",
-	queued: "✋",
-	idle: "💤",
-};
-
-const STATUS_CLASS: Record<ParticipantStatus, string> = {
-	speaking: "text-green-500",
-	interrupting: "text-red-500",
-	queued: "text-yellow-500",
-	idle: "text-muted-foreground",
+const STATUS_MAP: Record<
+	ParticipantStatus,
+	{ indicator: "speaking" | "busy" | "away" | "offline"; label: string }
+> = {
+	speaking: { indicator: "speaking", label: "発言中" },
+	interrupting: { indicator: "busy", label: "割り込み中" },
+	queued: { indicator: "away", label: "挙手中" },
+	idle: { indicator: "offline", label: "待機中" },
 };
 
 type ParticipantRole = "facilitator" | "participant";
@@ -62,31 +57,33 @@ export function ParticipantSidebar({ metadata, roomId, isFacilitator }: Particip
 	return (
 		<aside className="flex flex-col w-60 shrink-0 border-l bg-card h-full overflow-y-auto">
 			<div className="p-3 border-b">
-				<h2 className="text-sm font-semibold">参加者 ({participants.length})</h2>
+				<Typography variant="label">参加者 ({participants.length})</Typography>
 			</div>
 
 			{/* Facilitator controls */}
 			{isFacilitator && (
-				<div className="p-3 border-b flex flex-col gap-2">
-					<p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-						ファシリテーター操作
-					</p>
-					<Button
-						size="sm"
-						variant="outline"
-						onClick={() => nextSpeakerMutation.mutate({ roomId, data: {} })}
-						className="w-full"
-					>
-						次の発言者
-					</Button>
-					<Button
-						size="sm"
-						variant="outline"
-						onClick={() => skipSpeakerMutation.mutate({ roomId })}
-						className="w-full"
-					>
-						スキップ
-					</Button>
+				<div className="p-3 border-b">
+					<Stack direction="vertical" gap={2}>
+						<Typography variant="caption" weight="medium" className="uppercase tracking-wide">
+							ファシリテーター操作
+						</Typography>
+						<Button
+							size="sm"
+							variant="outline"
+							fullWidth
+							onClick={() => nextSpeakerMutation.mutate({ roomId, data: {} })}
+						>
+							次の発言者
+						</Button>
+						<Button
+							size="sm"
+							variant="outline"
+							fullWidth
+							onClick={() => skipSpeakerMutation.mutate({ roomId })}
+						>
+							スキップ
+						</Button>
+					</Stack>
 				</div>
 			)}
 
@@ -95,6 +92,7 @@ export function ParticipantSidebar({ metadata, roomId, isFacilitator }: Particip
 				{participants.map((p) => {
 					const status = getStatus(p, metadata);
 					const role = getRole(p);
+					const statusConfig = STATUS_MAP[status];
 					const interruption = metadata?.speakerQueue.interruptions.find(
 						(i) => i.participantId === p.identity,
 					);
@@ -102,26 +100,19 @@ export function ParticipantSidebar({ metadata, roomId, isFacilitator }: Particip
 					return (
 						<li
 							key={p.identity}
-							className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50"
+							className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors"
 						>
-							<span
-								role="img"
-								aria-label={status}
-								className={`text-base leading-none ${STATUS_CLASS[status]}`}
-							>
-								{STATUS_ICON[status]}
-							</span>
+							<StatusIndicator status={statusConfig.indicator} size="sm" />
 							<span className="flex-1 text-sm truncate">{p.name ?? p.identity}</span>
 							{role === "facilitator" && (
-								<Badge variant="secondary" className="text-[10px] px-1 py-0 shrink-0">
+								<Badge variant="subtle" colorScheme="primary" size="sm">
 									F
 								</Badge>
 							)}
 							{isFacilitator && status === "interrupting" && interruption && (
 								<Button
-									size="sm"
+									size="xs"
 									variant="destructive"
-									className="h-5 text-[10px] px-1 py-0 shrink-0"
 									onClick={() =>
 										endInterruptionMutation.mutate({
 											roomId,

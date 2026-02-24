@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { ArrowRight, ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router";
 import {
@@ -13,15 +14,17 @@ import {
 import type { Phase } from "~/api/models";
 import { PhaseForm, type PhaseFormValues } from "~/components/admin/PhaseForm";
 import { PhaseTypeIcon } from "~/components/admin/PhaseTypeIcon";
-import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "~/components/ui/dialog";
+	Alert,
+	Button,
+	EmptyState,
+	IconButton,
+	Modal,
+	PageHeader,
+	Spinner,
+	Stack,
+	Typography,
+} from "~/components/design-system";
 
 export function meta() {
 	return [{ title: "ルーム詳細 | OSODP Admin" }];
@@ -46,43 +49,53 @@ function PhaseListItem({
 	onEdit: () => void;
 }) {
 	return (
-		<div className="flex items-center gap-3 rounded-md border px-4 py-3 bg-background">
-			<div className="flex flex-col gap-0.5">
-				<button
-					type="button"
+		<div className="flex items-center gap-3 rounded-lg border px-4 py-3 bg-background hover:bg-muted/30 transition-colors">
+			<Stack direction="vertical" gap={0}>
+				<IconButton
+					variant="ghost"
+					size="sm"
+					icon={<ChevronUp className="size-3" />}
 					onClick={onMoveUp}
 					disabled={index === 0}
-					className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
-				>
-					▲
-				</button>
-				<button
-					type="button"
+					aria-label="上に移動"
+				/>
+				<IconButton
+					variant="ghost"
+					size="sm"
+					icon={<ChevronDown className="size-3" />}
 					onClick={onMoveDown}
 					disabled={index === total - 1}
-					className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
-				>
-					▼
-				</button>
-			</div>
-			<span className="text-sm text-muted-foreground w-5 text-center">{index + 1}</span>
+					aria-label="下に移動"
+				/>
+			</Stack>
+			<Typography variant="caption" className="w-5 text-center">
+				{index + 1}
+			</Typography>
 			<div className="flex-1 min-w-0">
-				<p className="font-medium text-sm">{phase.title}</p>
+				<Typography variant="h4" className="truncate">
+					{phase.title}
+				</Typography>
 				<PhaseTypeIcon type={phase.type} />
 			</div>
-			<div className="flex gap-1">
-				<Button variant="ghost" size="sm" onClick={onEdit}>
+			<Stack direction="horizontal" gap={1}>
+				<Button
+					variant="ghost"
+					size="sm"
+					leftIcon={<Pencil className="size-3.5" />}
+					onClick={onEdit}
+				>
 					編集
 				</Button>
 				<Button
 					variant="ghost"
 					size="sm"
+					leftIcon={<Trash2 className="size-3.5" />}
 					onClick={onDelete}
 					className="text-destructive hover:text-destructive"
 				>
 					削除
 				</Button>
-			</div>
+			</Stack>
 		</div>
 	);
 }
@@ -191,101 +204,118 @@ export default function AdminRoomDetailPage() {
 	}
 
 	return (
-		<div className="space-y-6">
-			<div>
-				<Link to="/admin" className="text-sm text-muted-foreground hover:text-foreground">
-					← ルーム一覧
-				</Link>
-			</div>
+		<Stack direction="vertical" gap={6}>
+			<PageHeader
+				title="ルーム詳細"
+				subtitle={`ID: ${id}`}
+				backHref="/admin"
+				breadcrumbs={[{ label: "ルーム一覧", href: "/admin" }, { label: "ルーム詳細" }]}
+				actions={
+					<Stack direction="horizontal" gap={2} wrap>
+						<Button variant="primary" onClick={handleActivate} loading={activating}>
+							アクティベート
+						</Button>
+						<Button
+							variant="outline"
+							onClick={() => handleStatusChange("completed")}
+							disabled={updatingRoom}
+						>
+							完了にする
+						</Button>
+						<Button
+							variant="outline"
+							onClick={() => handleStatusChange("archived")}
+							disabled={updatingRoom}
+						>
+							アーカイブ
+						</Button>
+						<Button variant="secondary" rightIcon={<ArrowRight className="size-4" />} asChild>
+							<Link to={`/admin/rooms/${id}/session`}>セッション進行へ</Link>
+						</Button>
+					</Stack>
+				}
+			/>
 
-			<div className="flex items-start justify-between gap-4">
-				<div>
-					<h1 className="text-2xl font-bold">ルーム詳細</h1>
-					<p className="text-muted-foreground text-sm mt-0.5">ID: {id}</p>
-				</div>
-				<div className="flex gap-2 flex-wrap justify-end">
-					<Button onClick={handleActivate} disabled={activating}>
-						{activating ? "アクティベート中..." : "アクティベート"}
-					</Button>
-					<Button
-						variant="outline"
-						onClick={() => handleStatusChange("completed")}
-						disabled={updatingRoom}
-					>
-						完了にする
-					</Button>
-					<Button
-						variant="outline"
-						onClick={() => handleStatusChange("archived")}
-						disabled={updatingRoom}
-					>
-						アーカイブ
-					</Button>
-					<Button variant="secondary" asChild>
-						<Link to={`/admin/rooms/${id}/session`}>セッション進行へ →</Link>
-					</Button>
-				</div>
-			</div>
-
-			{error && <p className="text-sm text-destructive">{error}</p>}
+			{error && <Alert variant="destructive">{error}</Alert>}
 
 			{/* フェーズ一覧 */}
-			<Card>
-				<CardHeader>
-					<div className="flex items-center justify-between">
-						<CardTitle className="text-base">フェーズ一覧</CardTitle>
-						<Dialog open={addOpen} onOpenChange={setAddOpen}>
-							<DialogTrigger asChild>
-								<Button size="sm">+ フェーズ追加</Button>
-							</DialogTrigger>
-							<DialogContent className="max-h-[90vh] overflow-y-auto">
-								<DialogHeader>
-									<DialogTitle>フェーズを追加</DialogTitle>
-								</DialogHeader>
-								<PhaseForm
-									onSubmit={handleAddPhase}
-									onCancel={() => setAddOpen(false)}
-									submitLabel="追加"
-								/>
-							</DialogContent>
-						</Dialog>
-					</div>
-				</CardHeader>
-				<CardContent className="space-y-2">
-					{phasesLoading && <p className="text-muted-foreground text-sm">読み込み中...</p>}
-					{!phasesLoading && phases.length === 0 && (
-						<p className="text-muted-foreground text-sm">フェーズがありません</p>
-					)}
-					{phases.map((phase, idx) => (
-						<PhaseListItem
-							key={phase.id}
-							phase={phase}
-							index={idx}
-							total={phases.length}
-							onMoveUp={() => handleMove(idx, idx - 1)}
-							onMoveDown={() => handleMove(idx, idx + 1)}
-							onDelete={() => handleDeletePhase(phase.id)}
-							onEdit={() => setEditingPhase(phase)}
-						/>
-					))}
-				</CardContent>
-			</Card>
+			<div className="rounded-xl border bg-card shadow-sm">
+				<div className="p-4 border-b">
+					<Stack direction="horizontal" align="center" justify="between">
+						<Typography variant="h4">フェーズ一覧</Typography>
+						<Button
+							size="sm"
+							variant="primary"
+							leftIcon={<Plus className="size-3.5" />}
+							onClick={() => setAddOpen(true)}
+						>
+							フェーズ追加
+						</Button>
+					</Stack>
+				</div>
+				<div className="p-4">
+					<Stack direction="vertical" gap={2}>
+						{phasesLoading && (
+							<Stack direction="vertical" align="center" className="py-8">
+								<Spinner label="読み込み中..." />
+							</Stack>
+						)}
+						{!phasesLoading && phases.length === 0 && (
+							<EmptyState
+								title="フェーズがありません"
+								description="フェーズを追加してセッションの流れを設計しましょう。"
+								action={
+									<Button
+										size="sm"
+										variant="primary"
+										leftIcon={<Plus className="size-3.5" />}
+										onClick={() => setAddOpen(true)}
+									>
+										フェーズ追加
+									</Button>
+								}
+							/>
+						)}
+						{phases.map((phase, idx) => (
+							<PhaseListItem
+								key={phase.id}
+								phase={phase}
+								index={idx}
+								total={phases.length}
+								onMoveUp={() => handleMove(idx, idx - 1)}
+								onMoveDown={() => handleMove(idx, idx + 1)}
+								onDelete={() => handleDeletePhase(phase.id)}
+								onEdit={() => setEditingPhase(phase)}
+							/>
+						))}
+					</Stack>
+				</div>
+			</div>
 
-			{/* 編集ダイアログ */}
-			<Dialog open={!!editingPhase} onOpenChange={(open) => !open && setEditingPhase(null)}>
-				<DialogContent className="max-h-[90vh] overflow-y-auto">
-					<DialogHeader>
-						<DialogTitle>フェーズを編集</DialogTitle>
-					</DialogHeader>
-					{editingPhase && (
-						<PhaseForm
-							initial={editingPhase}
-							onSubmit={handleEditPhase}
-							onCancel={() => setEditingPhase(null)}
-						/>
-					)}
-				</DialogContent>
-			</Dialog>
-		</div>
+			{/* 追加モーダル */}
+			<Modal open={addOpen} onOpenChange={setAddOpen} title="フェーズを追加" size="lg">
+				<PhaseForm
+					onSubmit={handleAddPhase}
+					onCancel={() => setAddOpen(false)}
+					submitLabel="追加"
+				/>
+			</Modal>
+
+			{/* 編集モーダル */}
+			<Modal
+				open={!!editingPhase}
+				onOpenChange={(open) => !open && setEditingPhase(null)}
+				title="フェーズを編集"
+				size="lg"
+			>
+				{editingPhase && (
+					<PhaseForm
+						initial={editingPhase}
+						onSubmit={handleEditPhase}
+						onCancel={() => setEditingPhase(null)}
+					/>
+				)}
+			</Modal>
+		</Stack>
 	);
 }

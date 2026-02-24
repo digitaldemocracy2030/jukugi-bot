@@ -1,4 +1,5 @@
 import { useLocalParticipant } from "@livekit/components-react";
+import { useEffect, useRef, useState } from "react";
 import {
 	useDeleteApiRoomsRoomIdQueueLeave,
 	usePostApiRoomsRoomIdInterrupt,
@@ -9,26 +10,45 @@ import {
 } from "../../../../src/api/gen/breakoutDeliberationOSAPI";
 import { useSpeakingCheck } from "../../../hooks/use-speaking-check";
 import type { RoomMetadata } from "../../../types/room-metadata";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from "../../ui/alert-dialog";
-import { Badge } from "../../ui/badge";
-import { Button } from "../../ui/button";
+import { Badge, Button, ConfirmDialog, SpeakerTimer, Stack, Typography } from "../../design-system";
 import { ParticipantSidebar } from "../participant-sidebar";
-import { SpeakerTimer } from "../speaker-timer";
 import { ProposeTransitionButton } from "../transition/propose-transition-button";
 import { TransitionVotePanel } from "../transition/transition-vote-panel";
 import { VideoStage } from "../video-stage";
 
 const DEFAULT_SPEAKING_SECONDS = 120;
+
+/** Compute remaining seconds from a speakingUntil timestamp, updating every 500ms. */
+function useCountdown(speakingUntil: number | undefined): number {
+	const [remaining, setRemaining] = useState(() =>
+		Math.max(0, Math.ceil(((speakingUntil ?? 0) - Date.now()) / 1000)),
+	);
+	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+	useEffect(() => {
+		if (!speakingUntil) {
+			setRemaining(0);
+			return;
+		}
+		setRemaining(Math.max(0, Math.ceil((speakingUntil - Date.now()) / 1000)));
+		intervalRef.current = setInterval(() => {
+			const r = Math.max(0, Math.ceil((speakingUntil - Date.now()) / 1000));
+			setRemaining(r);
+			if (r === 0 && intervalRef.current) {
+				clearInterval(intervalRef.current);
+				intervalRef.current = null;
+			}
+		}, 500);
+		return () => {
+			if (intervalRef.current) {
+				clearInterval(intervalRef.current);
+				intervalRef.current = null;
+			}
+		};
+	}, [speakingUntil]);
+
+	return remaining;
+}
 
 type DiscussionPhaseProps = {
 	metadata: RoomMetadata | null;
@@ -45,6 +65,8 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 	const nextSpeakerMutation = usePostApiRoomsRoomIdQueueNext();
 	const skipSpeakerMutation = usePostApiRoomsRoomIdQueueSkip();
 	const endInterruptionMutation = usePostApiRoomsRoomIdInterruptParticipantIdEnd();
+
+	const [interruptDialogOpen, setInterruptDialogOpen] = useState(false);
 
 	const participantMeta = (() => {
 		try {
@@ -78,8 +100,7 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 	useSpeakingCheck(roomId, featureFlags.canSpeak);
 
 	const currentSpeakerEntry = speakerQueue.currentSpeaker;
-	// The current speaker may have already been removed from the queue, so
-	// search both the queue and interruptions list before falling back to their ID.
+	const remainingSeconds = useCountdown(currentSpeakerEntry?.speakingUntil);
 	const currentSpeakerName = (() => {
 		if (!currentSpeakerEntry) return "";
 		const id = currentSpeakerEntry.participantId;
@@ -106,6 +127,7 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 			roomId,
 			data: { displayName: myDisplayName },
 		});
+		setInterruptDialogOpen(false);
 	};
 
 	return (
@@ -119,76 +141,76 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 				<section className="flex flex-col items-center gap-3 py-4">
 					{currentSpeakerEntry ? (
 						<SpeakerTimer
-							speakingUntil={currentSpeakerEntry.speakingUntil}
+							remainingSeconds={remainingSeconds}
 							totalSeconds={DEFAULT_SPEAKING_SECONDS}
 							speakerName={
 								isCurrentSpeaker ? `${currentSpeakerName}（あなた）` : currentSpeakerName
 							}
 						/>
 					) : (
-						<p className="text-muted-foreground text-sm">現在の発言者はいません</p>
+						<Typography variant="body" color="muted">
+							現在の発言者はいません
+						</Typography>
 					)}
 
 					{/* Interruptions */}
 					{speakerQueue.interruptions.length > 0 && (
-						<div className="flex flex-wrap gap-2 justify-center">
+						<Stack direction="horizontal" gap={2} wrap justify="center">
 							{speakerQueue.interruptions.map((i) => (
-								<Badge key={i.participantId} variant="destructive" className="gap-1">
-									⚡ {i.displayName}
+								<Badge key={i.participantId} variant="solid" colorScheme="destructive">
+									{i.displayName}
 								</Badge>
 							))}
-						</div>
+						</Stack>
 					)}
 				</section>
 
 				{/* Action buttons */}
-				<section className="flex gap-3 justify-center flex-wrap">
+				<Stack direction="horizontal" gap={3} justify="center" wrap>
 					{/* Raise hand / cancel */}
 					<Button
-						variant={isInQueue ? "secondary" : "default"}
+						variant={isInQueue ? "secondary" : "primary"}
 						disabled={!featureFlags.canSpeak || isCurrentSpeaker || isQueueLoading}
+						loading={isQueueLoading}
 						onClick={handleQueueToggle}
 					>
-						{isQueueLoading ? "処理中..." : isInQueue ? "挙手取消" : "挙手"}
+						{isInQueue ? "挙手取消" : "挙手"}
 					</Button>
 
 					{/* Interrupt with confirmation */}
-					<AlertDialog>
-						<AlertDialogTrigger asChild>
-							<Button
-								variant="outline"
-								disabled={
-									!featureFlags.canInterrupt ||
-									isInterrupting ||
-									maxInterruptionsReached ||
-									isInterruptLoading
-								}
-							>
-								{isInterruptLoading ? "処理中..." : "割り込み"}
-							</Button>
-						</AlertDialogTrigger>
-						<AlertDialogContent>
-							<AlertDialogHeader>
-								<AlertDialogTitle>割り込み確認</AlertDialogTitle>
-								<AlertDialogDescription>
-									現在の発言に割り込みますか？割り込みは短時間のみ許可されます。
-								</AlertDialogDescription>
-							</AlertDialogHeader>
-							<AlertDialogFooter>
-								<AlertDialogCancel>キャンセル</AlertDialogCancel>
-								<AlertDialogAction onClick={handleInterrupt}>割り込む</AlertDialogAction>
-							</AlertDialogFooter>
-						</AlertDialogContent>
-					</AlertDialog>
-				</section>
+					<Button
+						variant="outline"
+						disabled={
+							!featureFlags.canInterrupt ||
+							isInterrupting ||
+							maxInterruptionsReached ||
+							isInterruptLoading
+						}
+						loading={isInterruptLoading}
+						onClick={() => setInterruptDialogOpen(true)}
+					>
+						割り込み
+					</Button>
+					<ConfirmDialog
+						open={interruptDialogOpen}
+						onOpenChange={setInterruptDialogOpen}
+						title="割り込み確認"
+						description="現在の発言に割り込みますか？割り込みは短時間のみ許可されます。"
+						confirmLabel="割り込む"
+						cancelLabel="キャンセル"
+						onConfirm={handleInterrupt}
+					/>
+				</Stack>
 
 				{/* Speaking queue */}
 				<section>
-					<h3 className="text-sm font-semibold mb-2 text-muted-foreground uppercase tracking-wide">
+					<Typography variant="caption" weight="semibold" className="mb-2 uppercase tracking-wide">
 						発言待ち ({speakerQueue.queue.length})
-					</h3>
+					</Typography>
 					{speakerQueue.queue.length === 0 ? (
-						<p className="text-sm text-muted-foreground">発言待ちの参加者はいません</p>
+						<Typography variant="body" color="muted">
+							発言待ちの参加者はいません
+						</Typography>
 					) : (
 						<ol className="flex flex-col gap-1">
 							{speakerQueue.queue.map((entry, index) => {
@@ -217,10 +239,14 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 				{/* Facilitator-only queue management */}
 				{isFacilitator && (
 					<section className="border-t pt-4">
-						<h3 className="text-sm font-semibold mb-2 text-muted-foreground uppercase tracking-wide">
+						<Typography
+							variant="caption"
+							weight="semibold"
+							className="mb-2 uppercase tracking-wide"
+						>
 							ファシリテーター操作
-						</h3>
-						<div className="flex gap-2 flex-wrap">
+						</Typography>
+						<Stack direction="horizontal" gap={2} wrap>
 							<Button
 								size="sm"
 								variant="outline"
@@ -250,7 +276,7 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 									割り込み終了: {i.displayName}
 								</Button>
 							))}
-						</div>
+						</Stack>
 					</section>
 				)}
 

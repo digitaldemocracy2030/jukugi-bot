@@ -1,4 +1,5 @@
 import type { RoomMetadata } from "../../types/room-metadata";
+import { Spinner, Stack, Typography } from "../design-system";
 import { DiscussionPhase } from "./phases/discussion-phase";
 import { VideoPhase } from "./phases/video-phase";
 
@@ -12,9 +13,12 @@ export function PhaseRenderer({ metadata, roomId }: PhaseRendererProps) {
 
 	if (phaseType === null) {
 		return (
-			<div className="flex items-center justify-center h-64 text-muted-foreground">
-				ファシリテーターの開始を待っています...
-			</div>
+			<Stack direction="vertical" align="center" justify="center" className="h-64 flex-1" gap={3}>
+				<Spinner size="md" />
+				<Typography variant="body" color="muted">
+					ファシリテーターの開始を待っています...
+				</Typography>
+			</Stack>
 		);
 	}
 
@@ -28,8 +32,10 @@ export function PhaseRenderer({ metadata, roomId }: PhaseRendererProps) {
 
 	// "voting" | "survey" — placeholder with phase name
 	return (
-		<div className="flex items-center justify-center h-64 text-muted-foreground">
-			{phaseType === "voting" ? "投票フェーズ（実装予定）" : "アンケートフェーズ（実装予定）"}
-		</div>
+		<Stack direction="vertical" align="center" justify="center" className="h-64 flex-1" gap={2}>
+			<Typography variant="body" color="muted">
+				{phaseType === "voting" ? "投票フェーズ（実装予定）" : "アンケートフェーズ（実装予定）"}
+			</Typography>
+		</Stack>
 	);
 }

@@ -65,7 +65,7 @@ const Stack = forwardRef<HTMLElement, StackProps>(
 	) => {
 		return (
 			<Component
-				ref={ref}
+				ref={ref as React.Ref<never>}
 				data-slot="stack"
 				className={cn(
 					stackVariants({ direction, gap, align, justify, wrap, fullWidth, className }),

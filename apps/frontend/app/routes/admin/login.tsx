@@ -1,9 +1,8 @@
+import { Lock } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { getApiRooms } from "~/api/gen/breakoutDeliberationOSAPI";
-import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
+import { Alert, Button, FormField, Input, Stack, Typography } from "~/components/design-system";
 
 export function meta() {
 	return [{ title: "Admin Login | OSODP" }];
@@ -46,29 +45,54 @@ export default function AdminLoginPage() {
 	}
 
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-muted/20 px-4">
-			<Card className="w-full max-w-sm">
-				<CardHeader>
-					<CardTitle>OSODP Admin</CardTitle>
-					<CardDescription>Admin API Key を入力してください</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<form onSubmit={handleSubmit} className="space-y-4">
-						<Input
-							type="password"
-							placeholder="Admin API Key"
-							value={apiKey}
-							onChange={(e) => setApiKey(e.target.value)}
-							required
-							autoFocus
-						/>
-						{error && <p className="text-sm text-destructive">{error}</p>}
-						<Button type="submit" className="w-full" disabled={loading || !apiKey}>
-							{loading ? "確認中..." : "ログイン"}
-						</Button>
+		<Stack
+			direction="vertical"
+			align="center"
+			justify="center"
+			className="min-h-screen bg-muted/20 px-4"
+		>
+			<div className="w-full max-w-sm rounded-xl border bg-card shadow-sm">
+				<div className="p-6 pb-2">
+					<Stack direction="vertical" gap={2} align="center">
+						<div className="rounded-full bg-primary/10 p-3">
+							<Lock className="size-6 text-primary" />
+						</div>
+						<Typography variant="h2" align="center">
+							OSODP Admin
+						</Typography>
+						<Typography variant="body" color="muted" align="center">
+							Admin API Key を入力してください
+						</Typography>
+					</Stack>
+				</div>
+				<div className="p-6 pt-4">
+					<form onSubmit={handleSubmit}>
+						<Stack direction="vertical" gap={4}>
+							<FormField label="API Key" htmlFor="api-key">
+								<Input
+									id="api-key"
+									type="password"
+									placeholder="Admin API Key"
+									value={apiKey}
+									onChange={(e) => setApiKey(e.target.value)}
+									required
+									autoFocus
+								/>
+							</FormField>
+							{error && <Alert variant="destructive">{error}</Alert>}
+							<Button
+								type="submit"
+								variant="primary"
+								fullWidth
+								loading={loading}
+								disabled={!apiKey}
+							>
+								ログイン
+							</Button>
+						</Stack>
 					</form>
-				</CardContent>
-			</Card>
-		</div>
+				</div>
+			</div>
+		</Stack>
 	);
 }

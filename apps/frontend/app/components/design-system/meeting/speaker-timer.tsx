@@ -101,7 +101,7 @@ const SpeakerTimer = forwardRef<HTMLDivElement, SpeakerTimerProps>(
 				</div>
 
 				<p className="text-sm font-medium text-center max-w-[12rem] truncate">
-					<span className="text-muted-foreground">Speaking: </span>
+					<span className="text-muted-foreground">発言中: </span>
 					{speakerName}
 				</p>
 

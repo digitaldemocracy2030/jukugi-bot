@@ -1,9 +1,7 @@
 import { useState } from "react";
 import type { Room } from "../../../src/api/models";
 import { saveToken, useParticipant } from "../../hooks/use-participant";
-import { Button } from "../ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { Input } from "../ui/input";
+import { Alert, Button, FormField, Input, Spinner, Stack, Typography } from "../design-system";
 import { RecoveryCodeDisplay } from "./recovery-code-display";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8787";
@@ -114,74 +112,87 @@ export function Lobby({ room, onJoined }: LobbyProps) {
 
 	if (isLoading) {
 		return (
-			<div className="flex items-center justify-center min-h-screen bg-background p-4">
-				<Card className="w-full max-w-md">
-					<CardContent className="flex items-center justify-center py-12">
-						<p className="text-muted-foreground">読み込み中...</p>
-					</CardContent>
-				</Card>
-			</div>
+			<Stack
+				direction="vertical"
+				align="center"
+				justify="center"
+				className="min-h-screen bg-background p-4"
+			>
+				<div className="w-full max-w-md rounded-xl border bg-card p-8 shadow-sm">
+					<Stack direction="vertical" align="center" justify="center" className="py-8">
+						<Spinner size="lg" label="読み込み中..." />
+					</Stack>
+				</div>
+			</Stack>
 		);
 	}
 
 	return (
-		<div className="flex items-center justify-center min-h-screen bg-background p-4">
-			<Card className="w-full max-w-md">
-				<CardHeader>
-					<CardTitle className="text-2xl">{room.title}</CardTitle>
-					{room.description && <CardDescription>{room.description}</CardDescription>}
-				</CardHeader>
-				<CardContent className="flex flex-col gap-4">
-					{isKnown && participant ? (
-						<>
-							<p className="text-sm text-muted-foreground">以前の参加情報が見つかりました。</p>
-							{error && (
-								<p role="alert" className="text-sm text-destructive">
-									{error}
-								</p>
-							)}
-							<Button onClick={handleJoinAsKnown} disabled={isPending}>
-								{isPending ? "接続中..." : `${participant.displayName} として参加する`}
-							</Button>
-							<RecoveryCodeDisplay recoveryCode={participant.recoveryCode} />
-							<button
-								type="button"
-								className="text-sm text-muted-foreground underline underline-offset-2"
-								onClick={clearParticipant}
-							>
-								別のアカウントで参加する
-							</button>
-						</>
-					) : (
-						<>
-							<div className="flex flex-col gap-2">
-								<label htmlFor="display-name" className="text-sm font-medium">
-									表示名
-								</label>
-								<Input
-									id="display-name"
-									type="text"
-									placeholder="あなたの名前を入力"
-									value={displayName}
-									onChange={(e) => setDisplayName(e.target.value)}
-									onKeyDown={handleKeyDown}
-									disabled={isPending}
-									maxLength={50}
-									autoComplete="nickname"
-								/>
-							</div>
-							{error && (
-								<p role="alert" className="text-sm text-destructive">
-									{error}
-								</p>
-							)}
-							<Button onClick={handleJoinAsNew} disabled={isPending || !displayName.trim()}>
-								{isPending ? "接続中..." : "参加する"}
-							</Button>
-						</>
+		<Stack
+			direction="vertical"
+			align="center"
+			justify="center"
+			className="min-h-screen bg-background p-4"
+		>
+			<div className="w-full max-w-md rounded-xl border bg-card shadow-sm">
+				<div className="p-6 pb-2">
+					<Typography variant="h2">{room.title}</Typography>
+					{room.description && (
+						<Typography variant="body" color="muted" className="mt-1">
+							{room.description}
+						</Typography>
 					)}
-				</CardContent>
-			</Card>
-		</div>
+				</div>
+				<div className="p-6 pt-4">
+					<Stack direction="vertical" gap={4}>
+						{isKnown && participant ? (
+							<>
+								<Typography variant="body" color="muted">
+									以前の参加情報が見つかりました。
+								</Typography>
+								{error && <Alert variant="destructive">{error}</Alert>}
+								<Button variant="primary" fullWidth loading={isPending} onClick={handleJoinAsKnown}>
+									{`${participant.displayName} として参加する`}
+								</Button>
+								<RecoveryCodeDisplay recoveryCode={participant.recoveryCode} />
+								<button
+									type="button"
+									className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+									onClick={clearParticipant}
+								>
+									別のアカウントで参加する
+								</button>
+							</>
+						) : (
+							<>
+								<FormField label="表示名" htmlFor="display-name">
+									<Input
+										id="display-name"
+										type="text"
+										placeholder="あなたの名前を入力"
+										value={displayName}
+										onChange={(e) => setDisplayName(e.target.value)}
+										onKeyDown={handleKeyDown}
+										disabled={isPending}
+										maxLength={50}
+										autoComplete="nickname"
+									/>
+								</FormField>
+								{error && <Alert variant="destructive">{error}</Alert>}
+								<Button
+									variant="primary"
+									fullWidth
+									loading={isPending}
+									onClick={handleJoinAsNew}
+									disabled={!displayName.trim()}
+								>
+									参加する
+								</Button>
+							</>
+						)}
+					</Stack>
+				</div>
+			</div>
+		</Stack>
 	);
 }

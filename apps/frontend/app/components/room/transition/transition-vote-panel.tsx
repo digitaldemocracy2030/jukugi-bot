@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Alert, Badge, Button, Progress, Stack, Typography } from "~/components/design-system";
 import { useTransitionVote } from "~/hooks/use-transition-vote";
 import type { RoomMetadata } from "~/types/room-metadata";
 
@@ -60,104 +58,89 @@ export function TransitionVotePanel({
 	const thresholdPercent = Math.round(proposal.requiredThreshold * 100);
 
 	if (proposal.status === "approved") {
-		return (
-			<Card className="border-green-200 bg-green-50">
-				<CardContent className="pt-4">
-					<p className="text-center text-green-700 font-medium">
-						次のフェーズへの移行が決まりました
-					</p>
-				</CardContent>
-			</Card>
-		);
+		return <Alert variant="success">次のフェーズへの移行が決まりました</Alert>;
 	}
 	if (proposal.status === "rejected_by_admin") {
-		return (
-			<Card className="border-red-200 bg-red-50">
-				<CardContent className="pt-4">
-					<p className="text-center text-red-700">管理者により移行提案が却下されました</p>
-				</CardContent>
-			</Card>
-		);
+		return <Alert variant="destructive">管理者により移行提案が却下されました</Alert>;
 	}
 	if (proposal.status === "expired") {
-		return (
-			<Card className="border-gray-200 bg-gray-50">
-				<CardContent className="pt-4">
-					<p className="text-center text-gray-600">投票期限が終了しました（現状維持）</p>
-				</CardContent>
-			</Card>
-		);
+		return <Alert variant="default">投票期限が終了しました（現状維持）</Alert>;
 	}
 
 	return (
-		<Card className="border-blue-200">
-			<CardHeader className="pb-2">
-				<CardTitle className="text-sm flex items-center justify-between">
-					<span>次のフェーズへ移行しますか？</span>
-					<Badge variant="outline">
+		<div className="rounded-lg border border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 p-4">
+			<Stack direction="vertical" gap={3}>
+				<Stack direction="horizontal" align="center" justify="between">
+					<Typography variant="label">次のフェーズへ移行しますか？</Typography>
+					<Badge variant="outline" colorScheme="info">
 						{proposal.proposedByRole === "admin" ? "管理者提案" : "参加者提案"}
 					</Badge>
-				</CardTitle>
-			</CardHeader>
-			<CardContent className="space-y-3">
-				<div className="flex justify-between text-sm text-gray-600">
-					<span>賛成: {proposal.yesCount}</span>
-					<span>反対: {proposal.noCount}</span>
-					<span>投票数: {proposal.totalVoted}</span>
-				</div>
+				</Stack>
 
-				<div className="space-y-1">
-					<div className="h-2 w-full rounded-full bg-gray-200">
-						<div
-							className="h-full rounded-full bg-blue-500 transition-all"
-							style={{ width: `${yesPercent}%` }}
-						/>
-					</div>
-					<p className="text-xs text-gray-500 text-right">
+				<Stack direction="horizontal" justify="between">
+					<Typography variant="body-sm" color="muted">
+						賛成: {proposal.yesCount}
+					</Typography>
+					<Typography variant="body-sm" color="muted">
+						反対: {proposal.noCount}
+					</Typography>
+					<Typography variant="body-sm" color="muted">
+						投票数: {proposal.totalVoted}
+					</Typography>
+				</Stack>
+
+				<Stack direction="vertical" gap={1}>
+					<Progress value={yesPercent} variant="default" size="sm" />
+					<Typography variant="caption" align="right">
 						可決まで: {thresholdPercent}% 必要 (現在 {yesPercent}%)
-					</p>
-				</div>
+					</Typography>
+				</Stack>
 
 				{remainingSec !== null && (
-					<p className="text-xs text-center text-gray-500">残り {remainingSec} 秒</p>
+					<Typography variant="caption" align="center">
+						残り {remainingSec} 秒
+					</Typography>
 				)}
 
 				{!hasVoted ? (
-					<div className="flex gap-2">
+					<Stack direction="horizontal" gap={2}>
 						<Button
 							size="sm"
-							className="flex-1"
+							variant="primary"
+							fullWidth
 							onClick={() => handleVote("yes")}
-							disabled={isVoting}
+							loading={isVoting}
 						>
 							賛成
 						</Button>
 						<Button
 							size="sm"
 							variant="outline"
-							className="flex-1"
+							fullWidth
 							onClick={() => handleVote("no")}
-							disabled={isVoting}
+							loading={isVoting}
 						>
 							反対
 						</Button>
-					</div>
+					</Stack>
 				) : (
-					<p className="text-xs text-center text-gray-500">投票済み</p>
+					<Typography variant="caption" align="center">
+						投票済み
+					</Typography>
 				)}
 
 				{isAdmin && (
 					<Button
 						size="sm"
 						variant="destructive"
-						className="w-full"
+						fullWidth
 						onClick={handleReject}
-						disabled={isRejecting}
+						loading={isRejecting}
 					>
 						提案を却下
 					</Button>
 				)}
-			</CardContent>
-		</Card>
+			</Stack>
+		</div>
 	);
 }

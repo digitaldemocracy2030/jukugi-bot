@@ -9,8 +9,16 @@ import type { VideoPhaseConfig } from "~/api/models/videoPhaseConfig";
 import type { VideoPhaseFeatureFlags } from "~/api/models/videoPhaseFeatureFlags";
 import type { VotingPhaseConfig } from "~/api/models/votingPhaseConfig";
 import type { VotingPhaseFeatureFlags } from "~/api/models/votingPhaseFeatureFlags";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
+import {
+	Alert,
+	Button,
+	Checkbox,
+	FormField,
+	Input,
+	Select,
+	Stack,
+	Typography,
+} from "~/components/design-system";
 
 export type PhaseFormValues = {
 	type: PhaseType;
@@ -26,10 +34,6 @@ type Props = {
 	submitLabel?: string;
 };
 
-function FieldLabel({ children }: { children: React.ReactNode }) {
-	return <p className="text-xs text-muted-foreground mb-1">{children}</p>;
-}
-
 // ─── 共通：フェーズ遷移フラグ ────────────────────────────────────────────────
 function TransitionFlagsSection({
 	flags,
@@ -39,22 +43,19 @@ function TransitionFlagsSection({
 	onChange: (key: string, value: unknown) => void;
 }) {
 	return (
-		<fieldset className="space-y-2 rounded-md border px-4 py-3">
+		<fieldset className="space-y-3 rounded-lg border px-4 py-3">
 			<legend className="text-xs font-medium text-muted-foreground px-1">フェーズ遷移設定</legend>
-			<label className="flex items-center gap-2 text-sm cursor-pointer">
-				<input
-					type="checkbox"
-					checked={Boolean(flags.participantCanProposeTransition)}
-					onChange={(e) => onChange("participantCanProposeTransition", e.target.checked)}
-				/>
-				参加者が遷移を提案できる
-			</label>
+			<Checkbox
+				checked={Boolean(flags.participantCanProposeTransition)}
+				onCheckedChange={(checked) => onChange("participantCanProposeTransition", checked)}
+				label="参加者が遷移を提案できる"
+			/>
 			{Boolean(flags.participantCanProposeTransition) && (
 				<div className="grid grid-cols-2 gap-3 pl-5">
-					<div>
-						<FieldLabel>投票期間 (秒)</FieldLabel>
+					<FormField label="投票期間 (秒)">
 						<Input
 							type="number"
+							inputSize="sm"
 							min={1}
 							value={(flags.transitionVoteDurationSec as number) ?? ""}
 							onChange={(e) =>
@@ -65,11 +66,11 @@ function TransitionFlagsSection({
 							}
 							placeholder="60"
 						/>
-					</div>
-					<div>
-						<FieldLabel>可決しきい値 (0〜1)</FieldLabel>
+					</FormField>
+					<FormField label="可決しきい値 (0〜1)">
 						<Input
 							type="number"
+							inputSize="sm"
 							min={0}
 							max={1}
 							step={0.05}
@@ -79,11 +80,11 @@ function TransitionFlagsSection({
 							}
 							placeholder="0.5"
 						/>
-					</div>
-					<div className="col-span-2">
-						<FieldLabel>最低継続時間 (秒)</FieldLabel>
+					</FormField>
+					<FormField label="最低継続時間 (秒)" className="col-span-2">
 						<Input
 							type="number"
+							inputSize="sm"
 							min={0}
 							value={(flags.transitionMinDurationSec as number) ?? ""}
 							onChange={(e) =>
@@ -94,7 +95,7 @@ function TransitionFlagsSection({
 							}
 							placeholder="0"
 						/>
-					</div>
+					</FormField>
 				</div>
 			)}
 		</fieldset>
@@ -114,25 +115,21 @@ function VideoFields({
 	onFlags: (key: string, value: unknown) => void;
 }) {
 	return (
-		<div className="space-y-3">
-			<div>
-				<FieldLabel>動画URL (YouTube)</FieldLabel>
+		<Stack direction="vertical" gap={3}>
+			<FormField label="動画URL (YouTube)">
 				<Input
 					value={config.videoUrl ?? ""}
 					onChange={(e) => onConfig("videoUrl", e.target.value || undefined)}
 					placeholder="https://www.youtube.com/watch?v=..."
 				/>
-			</div>
-			<label className="flex items-center gap-2 text-sm cursor-pointer">
-				<input
-					type="checkbox"
-					checked={Boolean(config.autoAdvance)}
-					onChange={(e) => onConfig("autoAdvance", e.target.checked)}
-				/>
-				動画終了後に自動で次フェーズへ
-			</label>
+			</FormField>
+			<Checkbox
+				checked={Boolean(config.autoAdvance)}
+				onCheckedChange={(checked) => onConfig("autoAdvance", checked)}
+				label="動画終了後に自動で次フェーズへ"
+			/>
 			<TransitionFlagsSection flags={flags as Record<string, unknown>} onChange={onFlags} />
-		</div>
+		</Stack>
 	);
 }
 
@@ -149,54 +146,49 @@ function DiscussionFields({
 	onFlags: (key: string, value: unknown) => void;
 }) {
 	return (
-		<div className="space-y-3">
-			<div>
-				<FieldLabel>議題</FieldLabel>
+		<Stack direction="vertical" gap={3}>
+			<FormField label="議題">
 				<Input
 					value={config.topic ?? ""}
 					onChange={(e) => onConfig("topic", e.target.value || undefined)}
 					placeholder="このフェーズで議論するテーマ"
 				/>
-			</div>
+			</FormField>
 
-			<fieldset className="space-y-2 rounded-md border px-4 py-3">
+			<fieldset className="space-y-3 rounded-lg border px-4 py-3">
 				<legend className="text-xs font-medium text-muted-foreground px-1">発言設定</legend>
-				<label className="flex items-center gap-2 text-sm cursor-pointer">
-					<input
-						type="checkbox"
-						checked={Boolean(flags.canSpeak)}
-						onChange={(e) => onFlags("canSpeak", e.target.checked)}
-					/>
-					発言キュー機能を有効にする
-				</label>
+				<Checkbox
+					checked={Boolean(flags.canSpeak)}
+					onCheckedChange={(checked) => onFlags("canSpeak", checked)}
+					label="発言キュー機能を有効にする"
+				/>
 				{flags.canSpeak && (
 					<div className="pl-5">
-						<FieldLabel>発言時間 (秒)</FieldLabel>
-						<Input
-							type="number"
-							min={1}
-							value={(flags.speakingTimeSec as number) ?? ""}
-							onChange={(e) =>
-								onFlags("speakingTimeSec", e.target.value ? Number(e.target.value) : undefined)
-							}
-							placeholder="60"
-						/>
-					</div>
-				)}
-				<label className="flex items-center gap-2 text-sm cursor-pointer">
-					<input
-						type="checkbox"
-						checked={Boolean(flags.canInterrupt)}
-						onChange={(e) => onFlags("canInterrupt", e.target.checked)}
-					/>
-					割り込み機能を有効にする
-				</label>
-				{flags.canInterrupt && (
-					<div className="pl-5 grid grid-cols-2 gap-2">
-						<div>
-							<FieldLabel>割り込み時間 (秒)</FieldLabel>
+						<FormField label="発言時間 (秒)">
 							<Input
 								type="number"
+								inputSize="sm"
+								min={1}
+								value={(flags.speakingTimeSec as number) ?? ""}
+								onChange={(e) =>
+									onFlags("speakingTimeSec", e.target.value ? Number(e.target.value) : undefined)
+								}
+								placeholder="60"
+							/>
+						</FormField>
+					</div>
+				)}
+				<Checkbox
+					checked={Boolean(flags.canInterrupt)}
+					onCheckedChange={(checked) => onFlags("canInterrupt", checked)}
+					label="割り込み機能を有効にする"
+				/>
+				{flags.canInterrupt && (
+					<div className="pl-5 grid grid-cols-2 gap-3">
+						<FormField label="割り込み時間 (秒)">
+							<Input
+								type="number"
+								inputSize="sm"
 								min={1}
 								value={(flags.interruptionTimeSec as number) ?? ""}
 								onChange={(e) =>
@@ -207,11 +199,11 @@ function DiscussionFields({
 								}
 								placeholder="15"
 							/>
-						</div>
-						<div>
-							<FieldLabel>クールダウン (秒)</FieldLabel>
+						</FormField>
+						<FormField label="クールダウン (秒)">
 							<Input
 								type="number"
+								inputSize="sm"
 								min={0}
 								value={(flags.interruptionCooldownSec as number) ?? ""}
 								onChange={(e) =>
@@ -222,11 +214,11 @@ function DiscussionFields({
 								}
 								placeholder="30"
 							/>
-						</div>
-						<div>
-							<FieldLabel>最大同時割り込み数</FieldLabel>
+						</FormField>
+						<FormField label="最大同時割り込み数">
 							<Input
 								type="number"
+								inputSize="sm"
 								min={1}
 								value={(flags.maxInterruptions as number) ?? ""}
 								onChange={(e) =>
@@ -234,13 +226,13 @@ function DiscussionFields({
 								}
 								placeholder="2"
 							/>
-						</div>
+						</FormField>
 					</div>
 				)}
 			</fieldset>
 
 			<TransitionFlagsSection flags={flags as Record<string, unknown>} onChange={onFlags} />
-		</div>
+		</Stack>
 	);
 }
 
@@ -276,20 +268,19 @@ function VotingFields({
 	}
 
 	return (
-		<div className="space-y-3">
-			<div>
-				<FieldLabel>質問文</FieldLabel>
+		<Stack direction="vertical" gap={3}>
+			<FormField label="質問文">
 				<Input
 					value={config.question ?? ""}
 					onChange={(e) => onConfig("question", e.target.value || undefined)}
 					placeholder="参加者に問いかける質問"
 				/>
-			</div>
-			<div className="space-y-2">
-				<p className="text-sm font-medium">選択肢</p>
+			</FormField>
+			<Stack direction="vertical" gap={2}>
+				<Typography variant="label">選択肢</Typography>
 				{options.map((opt, idx) => (
 					// biome-ignore lint/suspicious/noArrayIndexKey: ordered list
-					<div key={idx} className="flex gap-2">
+					<Stack key={idx} direction="horizontal" gap={2}>
 						<Input
 							value={opt}
 							onChange={(e) => updateOption(idx, e.target.value)}
@@ -304,22 +295,19 @@ function VotingFields({
 						>
 							×
 						</Button>
-					</div>
+					</Stack>
 				))}
 				<Button type="button" variant="outline" size="sm" onClick={addOption}>
 					+ 選択肢を追加
 				</Button>
-			</div>
-			<label className="flex items-center gap-2 text-sm cursor-pointer">
-				<input
-					type="checkbox"
-					checked={Boolean(flags.canVote)}
-					onChange={(e) => onFlags("canVote", e.target.checked)}
-				/>
-				投票を有効にする
-			</label>
+			</Stack>
+			<Checkbox
+				checked={Boolean(flags.canVote)}
+				onCheckedChange={(checked) => onFlags("canVote", checked)}
+				label="投票を有効にする"
+			/>
 			<TransitionFlagsSection flags={flags as Record<string, unknown>} onChange={onFlags} />
-		</div>
+		</Stack>
 	);
 }
 
@@ -358,45 +346,45 @@ function SurveyFields({
 	}
 
 	return (
-		<div className="space-y-3">
-			<div className="space-y-2">
-				<p className="text-sm font-medium">質問一覧</p>
+		<Stack direction="vertical" gap={3}>
+			<Stack direction="vertical" gap={2}>
+				<Typography variant="label">質問一覧</Typography>
 				{questions.map((q, idx) => (
-					<div key={q.id} className="rounded-md border px-3 py-3 space-y-2">
-						<div className="flex items-center justify-between gap-2">
-							<span className="text-xs text-muted-foreground">質問 {idx + 1}</span>
+					<div key={q.id} className="rounded-lg border px-3 py-3 space-y-2">
+						<Stack direction="horizontal" align="center" justify="between" gap={2}>
+							<Typography variant="caption">質問 {idx + 1}</Typography>
 							<Button
 								type="button"
 								variant="ghost"
-								size="sm"
+								size="xs"
 								onClick={() => removeQuestion(idx)}
-								className="text-destructive hover:text-destructive h-6 text-xs"
+								className="text-destructive hover:text-destructive"
 							>
 								削除
 							</Button>
-						</div>
+						</Stack>
 						<Input
 							value={q.text}
 							onChange={(e) => updateQuestion(idx, "text", e.target.value)}
 							placeholder="質問文"
 						/>
-						<select
+						<Select
 							value={q.type}
-							onChange={(e) => updateQuestion(idx, "type", e.target.value)}
-							className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring"
-						>
-							<option value="text">自由記述</option>
-							<option value="single_choice">単一選択</option>
-							<option value="multiple_choice">複数選択</option>
-						</select>
+							onValueChange={(val) => updateQuestion(idx, "type", val)}
+							options={[
+								{ value: "text", label: "自由記述" },
+								{ value: "single_choice", label: "単一選択" },
+								{ value: "multiple_choice", label: "複数選択" },
+							]}
+						/>
 					</div>
 				))}
 				<Button type="button" variant="outline" size="sm" onClick={addQuestion}>
 					+ 質問を追加
 				</Button>
-			</div>
+			</Stack>
 			<TransitionFlagsSection flags={flags as Record<string, unknown>} onChange={onFlags} />
-		</div>
+		</Stack>
 	);
 }
 
@@ -427,8 +415,8 @@ export function PhaseForm({ initial, onSubmit, onCancel, submitLabel = "保存" 
 		setFlags((prev) => ({ ...prev, [key]: value }));
 	}
 
-	function handleTypeChange(newType: PhaseType) {
-		setType(newType);
+	function handleTypeChange(newType: string) {
+		setType(newType as PhaseType);
 		setConfig({});
 		setFlags({});
 	}
@@ -484,47 +472,43 @@ export function PhaseForm({ initial, onSubmit, onCancel, submitLabel = "保存" 
 	return (
 		<form onSubmit={handleSubmit} className="space-y-4">
 			{/* タイプ選択（編集時は変更不可） */}
-			<div>
-				<FieldLabel>タイプ</FieldLabel>
-				<select
+			<FormField label="タイプ">
+				<Select
 					value={type}
-					onChange={(e) => handleTypeChange(e.target.value as PhaseType)}
+					onValueChange={handleTypeChange}
 					disabled={!!initial}
-					className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring disabled:opacity-50"
-				>
-					<option value="video">▶ 動画</option>
-					<option value="discussion">💬 議論</option>
-					<option value="voting">🗳 投票</option>
-					<option value="survey">📋 アンケート</option>
-				</select>
-			</div>
+					options={[
+						{ value: "video", label: "▶ 動画" },
+						{ value: "discussion", label: "💬 議論" },
+						{ value: "voting", label: "🗳 投票" },
+						{ value: "survey", label: "📋 アンケート" },
+					]}
+				/>
+			</FormField>
 
 			{/* タイトル */}
-			<div>
-				<FieldLabel>
-					フェーズ名 <span className="text-destructive">*</span>
-				</FieldLabel>
+			<FormField label="フェーズ名" required>
 				<Input
 					value={title}
 					onChange={(e) => setTitle(e.target.value)}
 					placeholder="オープニング動画"
 					required
 				/>
-			</div>
+			</FormField>
 
 			{/* タイプ別フィールド */}
 			{typeFields[type]}
 
-			{error && <p className="text-sm text-destructive">{error}</p>}
+			{error && <Alert variant="destructive">{error}</Alert>}
 
-			<div className="flex gap-3 pt-1">
-				<Button type="submit" disabled={submitting || !title}>
-					{submitting ? "保存中..." : submitLabel}
+			<Stack direction="horizontal" gap={3} className="pt-1">
+				<Button type="submit" variant="primary" loading={submitting} disabled={!title}>
+					{submitLabel}
 				</Button>
 				<Button type="button" variant="outline" onClick={onCancel}>
 					キャンセル
 				</Button>
-			</div>
+			</Stack>
 		</form>
 	);
 }

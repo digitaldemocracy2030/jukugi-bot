@@ -1,4 +1,4 @@
-import { Button } from "~/components/ui/button";
+import { Button } from "~/components/design-system";
 import { useTransitionVote } from "~/hooks/use-transition-vote";
 
 interface ProposeTransitionButtonProps {
@@ -37,10 +37,10 @@ export function ProposeTransitionButton({
 			size="sm"
 			variant="outline"
 			onClick={handlePropose}
-			disabled={disabled || isProposing}
-			className="text-xs"
+			loading={isProposing}
+			disabled={disabled}
 		>
-			{isProposing ? "提案中..." : "次のフェーズへ移行を提案"}
+			次のフェーズへ移行を提案
 		</Button>
 	);
 }

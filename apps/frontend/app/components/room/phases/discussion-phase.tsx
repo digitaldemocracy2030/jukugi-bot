@@ -113,7 +113,7 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 			{/* Main content */}
 			<div className="flex-1 flex flex-col gap-4 p-4 overflow-y-auto">
 				{/* Video stage */}
-				<VideoStage metadata={metadata} />
+				<VideoStage metadata={metadata} micAllowed={isCurrentSpeaker || isInterrupting} />
 
 				{/* Active speaker / timer */}
 				<section className="flex flex-col items-center gap-3 py-4">

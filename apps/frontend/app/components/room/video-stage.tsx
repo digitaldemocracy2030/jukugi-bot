@@ -4,7 +4,10 @@ import type { RoomMetadata } from "../../types/room-metadata";
 import { MediaControls } from "./media-controls";
 import { ParticipantVideoTile } from "./participant-video-tile";
 
-export function VideoStage({ metadata }: { metadata: RoomMetadata | null }) {
+export function VideoStage({
+	metadata,
+	micAllowed = false,
+}: { metadata: RoomMetadata | null; micAllowed?: boolean }) {
 	const { localParticipant } = useLocalParticipant();
 	const participants = useParticipants();
 	const allTracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: true }], {
@@ -69,7 +72,7 @@ export function VideoStage({ metadata }: { metadata: RoomMetadata | null }) {
 			</div>
 			{/* セルフビューバー */}
 			<div className="flex items-center gap-3 px-2 py-1.5 border rounded-lg bg-card">
-				<MediaControls />
+				<MediaControls micAllowed={micAllowed} />
 				<div className="flex items-center gap-2 ml-auto">
 					<span className="text-xs text-muted-foreground">あなた:</span>
 					{selfTrack ? (

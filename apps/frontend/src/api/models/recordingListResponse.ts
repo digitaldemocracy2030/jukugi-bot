@@ -4,9 +4,8 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { JoinRoomRole } from "./joinRoomRole";
+import type { Recording } from "./recording";
 
-export interface JoinRoom {
-	participantToken: string;
-	role?: JoinRoomRole;
+export interface RecordingListResponse {
+	recordings: Recording[];
 }

@@ -2,6 +2,76 @@ import { createRoute, z } from "@hono/zod-openapi";
 
 export const PhaseTypeEnum = z.enum(["video", "discussion", "voting", "survey"]);
 
+// --- Transition feature flags (common to all phase types) ---
+export const TransitionFeatureFlagsSchema = z.object({
+	participantCanProposeTransition: z.boolean().optional(),
+	transitionMinDurationSec: z.number().int().nonnegative().optional(),
+	transitionThreshold: z.number().min(0).max(1).optional(),
+	transitionVoteDurationSec: z.number().int().positive().optional(),
+});
+
+// --- Per-type FeatureFlags schemas ---
+export const VideoPhaseFeatureFlagsSchema = TransitionFeatureFlagsSchema.strict().openapi(
+	"VideoPhaseFeatureFlags",
+);
+
+export const DiscussionPhaseFeatureFlagsSchema = TransitionFeatureFlagsSchema.extend({
+	canSpeak: z.boolean().optional(),
+	speakingTimeSec: z.number().int().positive().optional(),
+	canInterrupt: z.boolean().optional(),
+	interruptionTimeSec: z.number().int().positive().optional(),
+	interruptionCooldownSec: z.number().int().positive().optional(),
+	maxInterruptions: z.number().int().positive().optional(),
+})
+	.strict()
+	.openapi("DiscussionPhaseFeatureFlags");
+
+export const VotingPhaseFeatureFlagsSchema = TransitionFeatureFlagsSchema.extend({
+	canVote: z.boolean().optional(),
+})
+	.strict()
+	.openapi("VotingPhaseFeatureFlags");
+
+export const SurveyPhaseFeatureFlagsSchema = TransitionFeatureFlagsSchema.strict().openapi(
+	"SurveyPhaseFeatureFlags",
+);
+
+// --- Per-type Config schemas ---
+export const VideoPhaseConfigSchema = z
+	.object({
+		videoUrl: z.string().optional(),
+		autoAdvance: z.boolean().optional(),
+	})
+	.openapi("VideoPhaseConfig");
+
+export const DiscussionPhaseConfigSchema = z
+	.object({
+		topic: z.string().optional(),
+	})
+	.openapi("DiscussionPhaseConfig");
+
+export const VotingPhaseConfigSchema = z
+	.object({
+		question: z.string().optional(),
+		options: z.array(z.string()).optional(),
+	})
+	.openapi("VotingPhaseConfig");
+
+export const SurveyPhaseConfigSchema = z
+	.object({
+		questions: z
+			.array(
+				z.object({
+					id: z.string(),
+					text: z.string(),
+					type: z.enum(["text", "scale", "choice"]),
+				}),
+			)
+			.optional(),
+	})
+	.openapi("SurveyPhaseConfig");
+
+// --- Flat FeatureFlags schema kept for UpdatePhaseSchema (partial update convenience) ---
 export const PhaseFeatureFlagsSchema = z
 	.object({
 		canSpeak: z.boolean().optional(),
@@ -18,27 +88,100 @@ export const PhaseFeatureFlagsSchema = z
 	})
 	.openapi("PhaseFeatureFlags");
 
-export const PhaseSchema = z
+// --- Base fields shared by all phase response schemas ---
+const BasePhaseFields = {
+	id: z.string(),
+	roomId: z.string(),
+	title: z.string(),
+	sortOrder: z.number().int(),
+	createdAt: z.string().datetime(),
+};
+
+// --- Per-type Phase response schemas ---
+const VideoPhaseSchema = z
 	.object({
-		id: z.string(),
-		roomId: z.string(),
-		type: PhaseTypeEnum,
-		title: z.string(),
-		sortOrder: z.number().int(),
-		config: z.record(z.string(), z.unknown()),
-		featureFlags: PhaseFeatureFlagsSchema,
-		createdAt: z.string().datetime(),
+		...BasePhaseFields,
+		type: z.literal("video"),
+		config: VideoPhaseConfigSchema,
+		featureFlags: VideoPhaseFeatureFlagsSchema,
 	})
+	.openapi("VideoPhase");
+
+const DiscussionPhaseSchema = z
+	.object({
+		...BasePhaseFields,
+		type: z.literal("discussion"),
+		config: DiscussionPhaseConfigSchema,
+		featureFlags: DiscussionPhaseFeatureFlagsSchema,
+	})
+	.openapi("DiscussionPhase");
+
+const VotingPhaseSchema = z
+	.object({
+		...BasePhaseFields,
+		type: z.literal("voting"),
+		config: VotingPhaseConfigSchema,
+		featureFlags: VotingPhaseFeatureFlagsSchema,
+	})
+	.openapi("VotingPhase");
+
+const SurveyPhaseSchema = z
+	.object({
+		...BasePhaseFields,
+		type: z.literal("survey"),
+		config: SurveyPhaseConfigSchema,
+		featureFlags: SurveyPhaseFeatureFlagsSchema,
+	})
+	.openapi("SurveyPhase");
+
+export const PhaseSchema = z
+	.discriminatedUnion("type", [
+		VideoPhaseSchema,
+		DiscussionPhaseSchema,
+		VotingPhaseSchema,
+		SurveyPhaseSchema,
+	])
 	.openapi("Phase");
 
 export const CreatePhaseSchema = z
-	.object({
-		type: PhaseTypeEnum,
-		title: z.string().min(1).max(200),
-		sortOrder: z.number().int().min(0).optional(),
-		config: z.record(z.string(), z.unknown()).optional().default({}),
-		featureFlags: PhaseFeatureFlagsSchema.optional().default({}),
-	})
+	.discriminatedUnion("type", [
+		z
+			.object({
+				type: z.literal("video"),
+				title: z.string().min(1).max(200),
+				sortOrder: z.number().int().min(0).optional(),
+				config: VideoPhaseConfigSchema.optional().default({}),
+				featureFlags: VideoPhaseFeatureFlagsSchema.optional().default({}),
+			})
+			.openapi("CreateVideoPhase"),
+		z
+			.object({
+				type: z.literal("discussion"),
+				title: z.string().min(1).max(200),
+				sortOrder: z.number().int().min(0).optional(),
+				config: DiscussionPhaseConfigSchema.optional().default({}),
+				featureFlags: DiscussionPhaseFeatureFlagsSchema.optional().default({}),
+			})
+			.openapi("CreateDiscussionPhase"),
+		z
+			.object({
+				type: z.literal("voting"),
+				title: z.string().min(1).max(200),
+				sortOrder: z.number().int().min(0).optional(),
+				config: VotingPhaseConfigSchema.optional().default({}),
+				featureFlags: VotingPhaseFeatureFlagsSchema.optional().default({}),
+			})
+			.openapi("CreateVotingPhase"),
+		z
+			.object({
+				type: z.literal("survey"),
+				title: z.string().min(1).max(200),
+				sortOrder: z.number().int().min(0).optional(),
+				config: SurveyPhaseConfigSchema.optional().default({}),
+				featureFlags: SurveyPhaseFeatureFlagsSchema.optional().default({}),
+			})
+			.openapi("CreateSurveyPhase"),
+	])
 	.openapi("CreatePhase");
 
 export const UpdatePhaseSchema = z
@@ -69,6 +212,34 @@ export const RoomIdParamsSchema = z
 		roomId: z.string(),
 	})
 	.openapi("RoomIdParams");
+
+// --- TypeScript inferred types ---
+export type VideoPhaseFeatureFlags = z.infer<typeof VideoPhaseFeatureFlagsSchema>;
+export type DiscussionPhaseFeatureFlags = z.infer<typeof DiscussionPhaseFeatureFlagsSchema>;
+export type VotingPhaseFeatureFlags = z.infer<typeof VotingPhaseFeatureFlagsSchema>;
+export type SurveyPhaseFeatureFlags = z.infer<typeof SurveyPhaseFeatureFlagsSchema>;
+export type PhaseFeatureFlags =
+	| VideoPhaseFeatureFlags
+	| DiscussionPhaseFeatureFlags
+	| VotingPhaseFeatureFlags
+	| SurveyPhaseFeatureFlags;
+
+export type VideoPhaseConfig = z.infer<typeof VideoPhaseConfigSchema>;
+export type DiscussionPhaseConfig = z.infer<typeof DiscussionPhaseConfigSchema>;
+export type VotingPhaseConfig = z.infer<typeof VotingPhaseConfigSchema>;
+export type SurveyPhaseConfig = z.infer<typeof SurveyPhaseConfigSchema>;
+export type PhaseConfig =
+	| VideoPhaseConfig
+	| DiscussionPhaseConfig
+	| VotingPhaseConfig
+	| SurveyPhaseConfig;
+
+/**
+ * Flat featureFlags type for DB storage — all fields optional regardless of phase type.
+ * Used as the Drizzle $type<> annotation so other routes (speaking, transition, session)
+ * can access any flag without discriminant narrowing.
+ */
+export type DbPhaseFeatureFlags = z.infer<typeof PhaseFeatureFlagsSchema>;
 
 // Route definitions
 export const addPhaseRoute = createRoute({

@@ -5,6 +5,14 @@ import { phases, rooms } from "../db/schema";
 import { generateId } from "../lib/id";
 import { adminAuth } from "../middleware/admin-auth";
 import {
+	DiscussionPhaseConfigSchema,
+	DiscussionPhaseFeatureFlagsSchema,
+	SurveyPhaseConfigSchema,
+	SurveyPhaseFeatureFlagsSchema,
+	VideoPhaseConfigSchema,
+	VideoPhaseFeatureFlagsSchema,
+	VotingPhaseConfigSchema,
+	VotingPhaseFeatureFlagsSchema,
 	addPhaseRoute,
 	deletePhaseRoute,
 	listPhasesRoute,
@@ -18,23 +26,54 @@ type Bindings = {
 	ENVIRONMENT: string;
 };
 
-const app = new OpenAPIHono<{ Bindings: Bindings }>();
+const app = new OpenAPIHono<{ Bindings: Bindings }>({
+	defaultHook: (result, c) => {
+		if (!result.success) {
+			return c.json({ error: "Validation Error", details: result.error.flatten() }, 422);
+		}
+	},
+});
 
 function formatPhase(phase: typeof phases.$inferSelect) {
-	return {
-		...phase,
-		config: (phase.config ?? {}) as Record<string, unknown>,
-		featureFlags: (phase.featureFlags ?? {}) as {
-			canSpeak?: boolean;
-			canInterrupt?: boolean;
-			canVote?: boolean;
-			speakingTimeSec?: number;
-			interruptionTimeSec?: number;
-			interruptionCooldownSec?: number;
-			maxInterruptions?: number;
-		},
+	const base = {
+		id: phase.id,
+		roomId: phase.roomId,
+		title: phase.title,
+		sortOrder: phase.sortOrder,
 		createdAt: phase.createdAt.toISOString(),
 	};
+	switch (phase.type) {
+		case "video":
+			return {
+				...base,
+				type: "video" as const,
+				config: VideoPhaseConfigSchema.catch({}).parse(phase.config ?? {}),
+				featureFlags: VideoPhaseFeatureFlagsSchema.catch({}).parse(phase.featureFlags ?? {}),
+			};
+		case "discussion":
+			return {
+				...base,
+				type: "discussion" as const,
+				config: DiscussionPhaseConfigSchema.catch({}).parse(phase.config ?? {}),
+				featureFlags: DiscussionPhaseFeatureFlagsSchema.catch({}).parse(
+					phase.featureFlags ?? {},
+				),
+			};
+		case "voting":
+			return {
+				...base,
+				type: "voting" as const,
+				config: VotingPhaseConfigSchema.catch({}).parse(phase.config ?? {}),
+				featureFlags: VotingPhaseFeatureFlagsSchema.catch({}).parse(phase.featureFlags ?? {}),
+			};
+		case "survey":
+			return {
+				...base,
+				type: "survey" as const,
+				config: SurveyPhaseConfigSchema.catch({}).parse(phase.config ?? {}),
+				featureFlags: SurveyPhaseFeatureFlagsSchema.catch({}).parse(phase.featureFlags ?? {}),
+			};
+	}
 }
 
 // POST /api/rooms/:roomId/phases (admin)

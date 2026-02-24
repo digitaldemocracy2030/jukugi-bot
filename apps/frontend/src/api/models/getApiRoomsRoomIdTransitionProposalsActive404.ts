@@ -4,9 +4,7 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { JoinRoomRole } from "./joinRoomRole";
 
-export interface JoinRoom {
-	participantToken: string;
-	role?: JoinRoomRole;
-}
+export type GetApiRoomsRoomIdTransitionProposalsActive404 = {
+	error: string;
+};

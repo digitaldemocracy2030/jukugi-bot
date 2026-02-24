@@ -25,8 +25,11 @@ import type { BodyType, ErrorType } from "../custom-fetch";
 import { customFetch } from "../custom-fetch";
 import type {
 	ActivateRoomResponse,
+	CreateParticipant,
 	CreatePhase,
 	CreateRoom,
+	CreateTranscript,
+	CreateTranscriptResponse,
 	DeleteApiRoomsRoomId200,
 	DeleteApiRoomsRoomId401,
 	DeleteApiRoomsRoomId404,
@@ -35,11 +38,25 @@ import type {
 	DeleteApiRoomsRoomIdPhasesPhaseId404,
 	DeleteApiRoomsRoomIdQueueLeave404,
 	DeleteApiRoomsRoomIdQueueLeave422,
+	DeleteApiRoomsRoomIdTransitionProposalsProposalId200,
+	DeleteApiRoomsRoomIdTransitionProposalsProposalId401,
+	DeleteApiRoomsRoomIdTransitionProposalsProposalId404,
+	GetApiParticipantsMe401,
 	GetApiRoomsRoomIdPhases404,
+	GetApiRoomsRoomIdRecordings401,
+	GetApiRoomsRoomIdRecordings404,
+	GetApiRoomsRoomIdRecordings422,
+	GetApiRoomsRoomIdTranscripts401,
+	GetApiRoomsRoomIdTranscripts404,
+	GetApiRoomsRoomIdTranscripts422,
+	GetApiRoomsRoomIdTranscriptsParams,
+	GetApiRoomsRoomIdTransitionProposalsActive200,
+	GetApiRoomsRoomIdTransitionProposalsActive404,
 	GetApiRoomsSlug404,
 	InterruptRequest,
 	JoinRoom,
 	JoinRoomResponse,
+	ParticipantResponse,
 	PatchApiRoomsRoomId401,
 	PatchApiRoomsRoomId404,
 	PatchApiRoomsRoomId422,
@@ -49,6 +66,9 @@ import type {
 	Phase,
 	PhaseTransition,
 	PhaseTransitionResponse,
+	PostApiParticipants422,
+	PostApiParticipantsRecover404,
+	PostApiParticipantsRecover422,
 	PostApiRooms401,
 	PostApiRooms409,
 	PostApiRooms422,
@@ -82,8 +102,33 @@ import type {
 	PostApiRoomsRoomIdQueueSkip401,
 	PostApiRoomsRoomIdQueueSkip403,
 	PostApiRoomsRoomIdQueueSkip404,
+	PostApiRoomsRoomIdRecordingStart401,
+	PostApiRoomsRoomIdRecordingStart404,
+	PostApiRoomsRoomIdRecordingStart409,
+	PostApiRoomsRoomIdRecordingStart500,
+	PostApiRoomsRoomIdRecordingStop401,
+	PostApiRoomsRoomIdRecordingStop404,
+	PostApiRoomsRoomIdRecordingStop500,
 	PostApiRoomsRoomIdSpeakingCheck403,
 	PostApiRoomsRoomIdSpeakingCheck404,
+	PostApiRoomsRoomIdTranscripts401,
+	PostApiRoomsRoomIdTranscripts404,
+	PostApiRoomsRoomIdTranscripts422,
+	PostApiRoomsRoomIdTransitionProposals201,
+	PostApiRoomsRoomIdTransitionProposals400,
+	PostApiRoomsRoomIdTransitionProposals403,
+	PostApiRoomsRoomIdTransitionProposals404,
+	PostApiRoomsRoomIdTransitionProposals409,
+	PostApiRoomsRoomIdTransitionProposals422,
+	PostApiRoomsRoomIdTransitionProposals425,
+	PostApiRoomsRoomIdTransitionProposalsBody,
+	PostApiRoomsRoomIdTransitionProposalsProposalIdVotes200,
+	PostApiRoomsRoomIdTransitionProposalsProposalIdVotes404,
+	PostApiRoomsRoomIdTransitionProposalsProposalIdVotes409,
+	PostApiRoomsRoomIdTransitionProposalsProposalIdVotes422,
+	PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBody,
+	PostApiWebhooksLivekit200,
+	PostApiWebhooksLivekit400,
 	PutApiRoomsRoomIdPhasesReorder401,
 	PutApiRoomsRoomIdPhasesReorder404,
 	PutApiRoomsRoomIdPhasesReorder422,
@@ -91,13 +136,388 @@ import type {
 	QueueLeave,
 	QueueNext,
 	QueueResponse,
+	RecordingListResponse,
+	RecoverParticipant,
 	ReorderPhases,
 	Room,
+	StartRecordingResponse,
+	StopRecordingResponse,
+	TranscriptListResponse,
 	UpdatePhase,
 	UpdateRoom,
 } from "../models";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+/**
+ * @summary Create a new participant identity (persisted in localStorage)
+ */
+export type postApiParticipantsResponse200 = {
+	data: ParticipantResponse;
+	status: 200;
+};
+
+export type postApiParticipantsResponse422 = {
+	data: PostApiParticipants422;
+	status: 422;
+};
+
+export type postApiParticipantsResponseSuccess = postApiParticipantsResponse200 & {
+	headers: Headers;
+};
+export type postApiParticipantsResponseError = postApiParticipantsResponse422 & {
+	headers: Headers;
+};
+
+export type postApiParticipantsResponse =
+	| postApiParticipantsResponseSuccess
+	| postApiParticipantsResponseError;
+
+export const getPostApiParticipantsUrl = () => {
+	return `/api/participants`;
+};
+
+export const postApiParticipants = async (
+	createParticipant: CreateParticipant,
+	options?: RequestInit,
+): Promise<postApiParticipantsResponse> => {
+	return customFetch<postApiParticipantsResponse>(getPostApiParticipantsUrl(), {
+		...options,
+		method: "POST",
+		headers: { "Content-Type": "application/json", ...options?.headers },
+		body: JSON.stringify(createParticipant),
+	});
+};
+
+export const getPostApiParticipantsMutationOptions = <
+	TError = ErrorType<PostApiParticipants422>,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postApiParticipants>>,
+		TError,
+		{ data: BodyType<CreateParticipant> },
+		TContext
+	>;
+	request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postApiParticipants>>,
+	TError,
+	{ data: BodyType<CreateParticipant> },
+	TContext
+> => {
+	const mutationKey = ["postApiParticipants"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postApiParticipants>>,
+		{ data: BodyType<CreateParticipant> }
+	> = (props) => {
+		const { data } = props ?? {};
+
+		return postApiParticipants(data, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiParticipantsMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postApiParticipants>>
+>;
+export type PostApiParticipantsMutationBody = BodyType<CreateParticipant>;
+export type PostApiParticipantsMutationError = ErrorType<PostApiParticipants422>;
+
+/**
+ * @summary Create a new participant identity (persisted in localStorage)
+ */
+export const usePostApiParticipants = <
+	TError = ErrorType<PostApiParticipants422>,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postApiParticipants>>,
+			TError,
+			{ data: BodyType<CreateParticipant> },
+			TContext
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postApiParticipants>>,
+	TError,
+	{ data: BodyType<CreateParticipant> },
+	TContext
+> => {
+	return useMutation(getPostApiParticipantsMutationOptions(options), queryClient);
+};
+
+/**
+ * @summary Get the current participant by token from X-Participant-Token header
+ */
+export type getApiParticipantsMeResponse200 = {
+	data: ParticipantResponse;
+	status: 200;
+};
+
+export type getApiParticipantsMeResponse401 = {
+	data: GetApiParticipantsMe401;
+	status: 401;
+};
+
+export type getApiParticipantsMeResponseSuccess = getApiParticipantsMeResponse200 & {
+	headers: Headers;
+};
+export type getApiParticipantsMeResponseError = getApiParticipantsMeResponse401 & {
+	headers: Headers;
+};
+
+export type getApiParticipantsMeResponse =
+	| getApiParticipantsMeResponseSuccess
+	| getApiParticipantsMeResponseError;
+
+export const getGetApiParticipantsMeUrl = () => {
+	return `/api/participants/me`;
+};
+
+export const getApiParticipantsMe = async (
+	options?: RequestInit,
+): Promise<getApiParticipantsMeResponse> => {
+	return customFetch<getApiParticipantsMeResponse>(getGetApiParticipantsMeUrl(), {
+		...options,
+		method: "GET",
+	});
+};
+
+export const getGetApiParticipantsMeQueryKey = () => {
+	return [`/api/participants/me`] as const;
+};
+
+export const getGetApiParticipantsMeQueryOptions = <
+	TData = Awaited<ReturnType<typeof getApiParticipantsMe>>,
+	TError = ErrorType<GetApiParticipantsMe401>,
+>(options?: {
+	query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiParticipantsMe>>, TError, TData>>;
+	request?: SecondParameter<typeof customFetch>;
+}) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
+
+	const queryKey = queryOptions?.queryKey ?? getGetApiParticipantsMeQueryKey();
+
+	const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiParticipantsMe>>> = ({ signal }) =>
+		getApiParticipantsMe({ signal, ...requestOptions });
+
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getApiParticipantsMe>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiParticipantsMeQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getApiParticipantsMe>>
+>;
+export type GetApiParticipantsMeQueryError = ErrorType<GetApiParticipantsMe401>;
+
+export function useGetApiParticipantsMe<
+	TData = Awaited<ReturnType<typeof getApiParticipantsMe>>,
+	TError = ErrorType<GetApiParticipantsMe401>,
+>(
+	options: {
+		query: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getApiParticipantsMe>>, TError, TData>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getApiParticipantsMe>>,
+					TError,
+					Awaited<ReturnType<typeof getApiParticipantsMe>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiParticipantsMe<
+	TData = Awaited<ReturnType<typeof getApiParticipantsMe>>,
+	TError = ErrorType<GetApiParticipantsMe401>,
+>(
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getApiParticipantsMe>>, TError, TData>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getApiParticipantsMe>>,
+					TError,
+					Awaited<ReturnType<typeof getApiParticipantsMe>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiParticipantsMe<
+	TData = Awaited<ReturnType<typeof getApiParticipantsMe>>,
+	TError = ErrorType<GetApiParticipantsMe401>,
+>(
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getApiParticipantsMe>>, TError, TData>
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get the current participant by token from X-Participant-Token header
+ */
+
+export function useGetApiParticipantsMe<
+	TData = Awaited<ReturnType<typeof getApiParticipantsMe>>,
+	TError = ErrorType<GetApiParticipantsMe401>,
+>(
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getApiParticipantsMe>>, TError, TData>
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+	const queryOptions = getGetApiParticipantsMeQueryOptions(options);
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Recover a participant identity by recovery code
+ */
+export type postApiParticipantsRecoverResponse200 = {
+	data: ParticipantResponse;
+	status: 200;
+};
+
+export type postApiParticipantsRecoverResponse404 = {
+	data: PostApiParticipantsRecover404;
+	status: 404;
+};
+
+export type postApiParticipantsRecoverResponse422 = {
+	data: PostApiParticipantsRecover422;
+	status: 422;
+};
+
+export type postApiParticipantsRecoverResponseSuccess = postApiParticipantsRecoverResponse200 & {
+	headers: Headers;
+};
+export type postApiParticipantsRecoverResponseError = (
+	| postApiParticipantsRecoverResponse404
+	| postApiParticipantsRecoverResponse422
+) & {
+	headers: Headers;
+};
+
+export type postApiParticipantsRecoverResponse =
+	| postApiParticipantsRecoverResponseSuccess
+	| postApiParticipantsRecoverResponseError;
+
+export const getPostApiParticipantsRecoverUrl = () => {
+	return `/api/participants/recover`;
+};
+
+export const postApiParticipantsRecover = async (
+	recoverParticipant: RecoverParticipant,
+	options?: RequestInit,
+): Promise<postApiParticipantsRecoverResponse> => {
+	return customFetch<postApiParticipantsRecoverResponse>(getPostApiParticipantsRecoverUrl(), {
+		...options,
+		method: "POST",
+		headers: { "Content-Type": "application/json", ...options?.headers },
+		body: JSON.stringify(recoverParticipant),
+	});
+};
+
+export const getPostApiParticipantsRecoverMutationOptions = <
+	TError = ErrorType<PostApiParticipantsRecover404 | PostApiParticipantsRecover422>,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postApiParticipantsRecover>>,
+		TError,
+		{ data: BodyType<RecoverParticipant> },
+		TContext
+	>;
+	request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postApiParticipantsRecover>>,
+	TError,
+	{ data: BodyType<RecoverParticipant> },
+	TContext
+> => {
+	const mutationKey = ["postApiParticipantsRecover"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postApiParticipantsRecover>>,
+		{ data: BodyType<RecoverParticipant> }
+	> = (props) => {
+		const { data } = props ?? {};
+
+		return postApiParticipantsRecover(data, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiParticipantsRecoverMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postApiParticipantsRecover>>
+>;
+export type PostApiParticipantsRecoverMutationBody = BodyType<RecoverParticipant>;
+export type PostApiParticipantsRecoverMutationError = ErrorType<
+	PostApiParticipantsRecover404 | PostApiParticipantsRecover422
+>;
+
+/**
+ * @summary Recover a participant identity by recovery code
+ */
+export const usePostApiParticipantsRecover = <
+	TError = ErrorType<PostApiParticipantsRecover404 | PostApiParticipantsRecover422>,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postApiParticipantsRecover>>,
+			TError,
+			{ data: BodyType<RecoverParticipant> },
+			TContext
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postApiParticipantsRecover>>,
+	TError,
+	{ data: BodyType<RecoverParticipant> },
+	TContext
+> => {
+	return useMutation(getPostApiParticipantsRecoverMutationOptions(options), queryClient);
+};
 
 /**
  * @summary Create a new room
@@ -2626,4 +3046,1594 @@ export const usePostApiRoomsRoomIdSpeakingCheck = <
 	TContext
 > => {
 	return useMutation(getPostApiRoomsRoomIdSpeakingCheckMutationOptions(options), queryClient);
+};
+
+/**
+ * @summary Start recording a room via LiveKit Egress → R2
+ */
+export type postApiRoomsRoomIdRecordingStartResponse200 = {
+	data: StartRecordingResponse;
+	status: 200;
+};
+
+export type postApiRoomsRoomIdRecordingStartResponse401 = {
+	data: PostApiRoomsRoomIdRecordingStart401;
+	status: 401;
+};
+
+export type postApiRoomsRoomIdRecordingStartResponse404 = {
+	data: PostApiRoomsRoomIdRecordingStart404;
+	status: 404;
+};
+
+export type postApiRoomsRoomIdRecordingStartResponse409 = {
+	data: PostApiRoomsRoomIdRecordingStart409;
+	status: 409;
+};
+
+export type postApiRoomsRoomIdRecordingStartResponse500 = {
+	data: PostApiRoomsRoomIdRecordingStart500;
+	status: 500;
+};
+
+export type postApiRoomsRoomIdRecordingStartResponseSuccess =
+	postApiRoomsRoomIdRecordingStartResponse200 & {
+		headers: Headers;
+	};
+export type postApiRoomsRoomIdRecordingStartResponseError = (
+	| postApiRoomsRoomIdRecordingStartResponse401
+	| postApiRoomsRoomIdRecordingStartResponse404
+	| postApiRoomsRoomIdRecordingStartResponse409
+	| postApiRoomsRoomIdRecordingStartResponse500
+) & {
+	headers: Headers;
+};
+
+export type postApiRoomsRoomIdRecordingStartResponse =
+	| postApiRoomsRoomIdRecordingStartResponseSuccess
+	| postApiRoomsRoomIdRecordingStartResponseError;
+
+export const getPostApiRoomsRoomIdRecordingStartUrl = (roomId: string) => {
+	return `/api/rooms/${roomId}/recording/start`;
+};
+
+export const postApiRoomsRoomIdRecordingStart = async (
+	roomId: string,
+	options?: RequestInit,
+): Promise<postApiRoomsRoomIdRecordingStartResponse> => {
+	return customFetch<postApiRoomsRoomIdRecordingStartResponse>(
+		getPostApiRoomsRoomIdRecordingStartUrl(roomId),
+		{
+			...options,
+			method: "POST",
+		},
+	);
+};
+
+export const getPostApiRoomsRoomIdRecordingStartMutationOptions = <
+	TError = ErrorType<
+		| PostApiRoomsRoomIdRecordingStart401
+		| PostApiRoomsRoomIdRecordingStart404
+		| PostApiRoomsRoomIdRecordingStart409
+		| PostApiRoomsRoomIdRecordingStart500
+	>,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postApiRoomsRoomIdRecordingStart>>,
+		TError,
+		{ roomId: string },
+		TContext
+	>;
+	request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postApiRoomsRoomIdRecordingStart>>,
+	TError,
+	{ roomId: string },
+	TContext
+> => {
+	const mutationKey = ["postApiRoomsRoomIdRecordingStart"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postApiRoomsRoomIdRecordingStart>>,
+		{ roomId: string }
+	> = (props) => {
+		const { roomId } = props ?? {};
+
+		return postApiRoomsRoomIdRecordingStart(roomId, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiRoomsRoomIdRecordingStartMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postApiRoomsRoomIdRecordingStart>>
+>;
+
+export type PostApiRoomsRoomIdRecordingStartMutationError = ErrorType<
+	| PostApiRoomsRoomIdRecordingStart401
+	| PostApiRoomsRoomIdRecordingStart404
+	| PostApiRoomsRoomIdRecordingStart409
+	| PostApiRoomsRoomIdRecordingStart500
+>;
+
+/**
+ * @summary Start recording a room via LiveKit Egress → R2
+ */
+export const usePostApiRoomsRoomIdRecordingStart = <
+	TError = ErrorType<
+		| PostApiRoomsRoomIdRecordingStart401
+		| PostApiRoomsRoomIdRecordingStart404
+		| PostApiRoomsRoomIdRecordingStart409
+		| PostApiRoomsRoomIdRecordingStart500
+	>,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postApiRoomsRoomIdRecordingStart>>,
+			TError,
+			{ roomId: string },
+			TContext
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postApiRoomsRoomIdRecordingStart>>,
+	TError,
+	{ roomId: string },
+	TContext
+> => {
+	return useMutation(getPostApiRoomsRoomIdRecordingStartMutationOptions(options), queryClient);
+};
+
+/**
+ * @summary Stop the active recording for a room
+ */
+export type postApiRoomsRoomIdRecordingStopResponse200 = {
+	data: StopRecordingResponse;
+	status: 200;
+};
+
+export type postApiRoomsRoomIdRecordingStopResponse401 = {
+	data: PostApiRoomsRoomIdRecordingStop401;
+	status: 401;
+};
+
+export type postApiRoomsRoomIdRecordingStopResponse404 = {
+	data: PostApiRoomsRoomIdRecordingStop404;
+	status: 404;
+};
+
+export type postApiRoomsRoomIdRecordingStopResponse500 = {
+	data: PostApiRoomsRoomIdRecordingStop500;
+	status: 500;
+};
+
+export type postApiRoomsRoomIdRecordingStopResponseSuccess =
+	postApiRoomsRoomIdRecordingStopResponse200 & {
+		headers: Headers;
+	};
+export type postApiRoomsRoomIdRecordingStopResponseError = (
+	| postApiRoomsRoomIdRecordingStopResponse401
+	| postApiRoomsRoomIdRecordingStopResponse404
+	| postApiRoomsRoomIdRecordingStopResponse500
+) & {
+	headers: Headers;
+};
+
+export type postApiRoomsRoomIdRecordingStopResponse =
+	| postApiRoomsRoomIdRecordingStopResponseSuccess
+	| postApiRoomsRoomIdRecordingStopResponseError;
+
+export const getPostApiRoomsRoomIdRecordingStopUrl = (roomId: string) => {
+	return `/api/rooms/${roomId}/recording/stop`;
+};
+
+export const postApiRoomsRoomIdRecordingStop = async (
+	roomId: string,
+	options?: RequestInit,
+): Promise<postApiRoomsRoomIdRecordingStopResponse> => {
+	return customFetch<postApiRoomsRoomIdRecordingStopResponse>(
+		getPostApiRoomsRoomIdRecordingStopUrl(roomId),
+		{
+			...options,
+			method: "POST",
+		},
+	);
+};
+
+export const getPostApiRoomsRoomIdRecordingStopMutationOptions = <
+	TError = ErrorType<
+		| PostApiRoomsRoomIdRecordingStop401
+		| PostApiRoomsRoomIdRecordingStop404
+		| PostApiRoomsRoomIdRecordingStop500
+	>,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postApiRoomsRoomIdRecordingStop>>,
+		TError,
+		{ roomId: string },
+		TContext
+	>;
+	request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postApiRoomsRoomIdRecordingStop>>,
+	TError,
+	{ roomId: string },
+	TContext
+> => {
+	const mutationKey = ["postApiRoomsRoomIdRecordingStop"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postApiRoomsRoomIdRecordingStop>>,
+		{ roomId: string }
+	> = (props) => {
+		const { roomId } = props ?? {};
+
+		return postApiRoomsRoomIdRecordingStop(roomId, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiRoomsRoomIdRecordingStopMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postApiRoomsRoomIdRecordingStop>>
+>;
+
+export type PostApiRoomsRoomIdRecordingStopMutationError = ErrorType<
+	| PostApiRoomsRoomIdRecordingStop401
+	| PostApiRoomsRoomIdRecordingStop404
+	| PostApiRoomsRoomIdRecordingStop500
+>;
+
+/**
+ * @summary Stop the active recording for a room
+ */
+export const usePostApiRoomsRoomIdRecordingStop = <
+	TError = ErrorType<
+		| PostApiRoomsRoomIdRecordingStop401
+		| PostApiRoomsRoomIdRecordingStop404
+		| PostApiRoomsRoomIdRecordingStop500
+	>,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postApiRoomsRoomIdRecordingStop>>,
+			TError,
+			{ roomId: string },
+			TContext
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postApiRoomsRoomIdRecordingStop>>,
+	TError,
+	{ roomId: string },
+	TContext
+> => {
+	return useMutation(getPostApiRoomsRoomIdRecordingStopMutationOptions(options), queryClient);
+};
+
+/**
+ * @summary List recordings for a room
+ */
+export type getApiRoomsRoomIdRecordingsResponse200 = {
+	data: RecordingListResponse;
+	status: 200;
+};
+
+export type getApiRoomsRoomIdRecordingsResponse401 = {
+	data: GetApiRoomsRoomIdRecordings401;
+	status: 401;
+};
+
+export type getApiRoomsRoomIdRecordingsResponse404 = {
+	data: GetApiRoomsRoomIdRecordings404;
+	status: 404;
+};
+
+export type getApiRoomsRoomIdRecordingsResponse422 = {
+	data: GetApiRoomsRoomIdRecordings422;
+	status: 422;
+};
+
+export type getApiRoomsRoomIdRecordingsResponseSuccess = getApiRoomsRoomIdRecordingsResponse200 & {
+	headers: Headers;
+};
+export type getApiRoomsRoomIdRecordingsResponseError = (
+	| getApiRoomsRoomIdRecordingsResponse401
+	| getApiRoomsRoomIdRecordingsResponse404
+	| getApiRoomsRoomIdRecordingsResponse422
+) & {
+	headers: Headers;
+};
+
+export type getApiRoomsRoomIdRecordingsResponse =
+	| getApiRoomsRoomIdRecordingsResponseSuccess
+	| getApiRoomsRoomIdRecordingsResponseError;
+
+export const getGetApiRoomsRoomIdRecordingsUrl = (roomId: string) => {
+	return `/api/rooms/${roomId}/recordings`;
+};
+
+export const getApiRoomsRoomIdRecordings = async (
+	roomId: string,
+	options?: RequestInit,
+): Promise<getApiRoomsRoomIdRecordingsResponse> => {
+	return customFetch<getApiRoomsRoomIdRecordingsResponse>(
+		getGetApiRoomsRoomIdRecordingsUrl(roomId),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
+
+export const getGetApiRoomsRoomIdRecordingsQueryKey = (roomId: string) => {
+	return [`/api/rooms/${roomId}/recordings`] as const;
+};
+
+export const getGetApiRoomsRoomIdRecordingsQueryOptions = <
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdRecordings>>,
+	TError = ErrorType<
+		GetApiRoomsRoomIdRecordings401 | GetApiRoomsRoomIdRecordings404 | GetApiRoomsRoomIdRecordings422
+	>,
+>(
+	roomId: string,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getApiRoomsRoomIdRecordings>>, TError, TData>
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
+
+	const queryKey = queryOptions?.queryKey ?? getGetApiRoomsRoomIdRecordingsQueryKey(roomId);
+
+	const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiRoomsRoomIdRecordings>>> = ({
+		signal,
+	}) => getApiRoomsRoomIdRecordings(roomId, { signal, ...requestOptions });
+
+	return { queryKey, queryFn, enabled: !!roomId, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getApiRoomsRoomIdRecordings>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiRoomsRoomIdRecordingsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getApiRoomsRoomIdRecordings>>
+>;
+export type GetApiRoomsRoomIdRecordingsQueryError = ErrorType<
+	GetApiRoomsRoomIdRecordings401 | GetApiRoomsRoomIdRecordings404 | GetApiRoomsRoomIdRecordings422
+>;
+
+export function useGetApiRoomsRoomIdRecordings<
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdRecordings>>,
+	TError = ErrorType<
+		GetApiRoomsRoomIdRecordings401 | GetApiRoomsRoomIdRecordings404 | GetApiRoomsRoomIdRecordings422
+	>,
+>(
+	roomId: string,
+	options: {
+		query: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getApiRoomsRoomIdRecordings>>, TError, TData>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getApiRoomsRoomIdRecordings>>,
+					TError,
+					Awaited<ReturnType<typeof getApiRoomsRoomIdRecordings>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiRoomsRoomIdRecordings<
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdRecordings>>,
+	TError = ErrorType<
+		GetApiRoomsRoomIdRecordings401 | GetApiRoomsRoomIdRecordings404 | GetApiRoomsRoomIdRecordings422
+	>,
+>(
+	roomId: string,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getApiRoomsRoomIdRecordings>>, TError, TData>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getApiRoomsRoomIdRecordings>>,
+					TError,
+					Awaited<ReturnType<typeof getApiRoomsRoomIdRecordings>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiRoomsRoomIdRecordings<
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdRecordings>>,
+	TError = ErrorType<
+		GetApiRoomsRoomIdRecordings401 | GetApiRoomsRoomIdRecordings404 | GetApiRoomsRoomIdRecordings422
+	>,
+>(
+	roomId: string,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getApiRoomsRoomIdRecordings>>, TError, TData>
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary List recordings for a room
+ */
+
+export function useGetApiRoomsRoomIdRecordings<
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdRecordings>>,
+	TError = ErrorType<
+		GetApiRoomsRoomIdRecordings401 | GetApiRoomsRoomIdRecordings404 | GetApiRoomsRoomIdRecordings422
+	>,
+>(
+	roomId: string,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getApiRoomsRoomIdRecordings>>, TError, TData>
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+	const queryOptions = getGetApiRoomsRoomIdRecordingsQueryOptions(roomId, options);
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a phase transition proposal
+ */
+export type postApiRoomsRoomIdTransitionProposalsResponse201 = {
+	data: PostApiRoomsRoomIdTransitionProposals201;
+	status: 201;
+};
+
+export type postApiRoomsRoomIdTransitionProposalsResponse400 = {
+	data: PostApiRoomsRoomIdTransitionProposals400;
+	status: 400;
+};
+
+export type postApiRoomsRoomIdTransitionProposalsResponse403 = {
+	data: PostApiRoomsRoomIdTransitionProposals403;
+	status: 403;
+};
+
+export type postApiRoomsRoomIdTransitionProposalsResponse404 = {
+	data: PostApiRoomsRoomIdTransitionProposals404;
+	status: 404;
+};
+
+export type postApiRoomsRoomIdTransitionProposalsResponse409 = {
+	data: PostApiRoomsRoomIdTransitionProposals409;
+	status: 409;
+};
+
+export type postApiRoomsRoomIdTransitionProposalsResponse422 = {
+	data: PostApiRoomsRoomIdTransitionProposals422;
+	status: 422;
+};
+
+export type postApiRoomsRoomIdTransitionProposalsResponse425 = {
+	data: PostApiRoomsRoomIdTransitionProposals425;
+	status: 425;
+};
+
+export type postApiRoomsRoomIdTransitionProposalsResponseSuccess =
+	postApiRoomsRoomIdTransitionProposalsResponse201 & {
+		headers: Headers;
+	};
+export type postApiRoomsRoomIdTransitionProposalsResponseError = (
+	| postApiRoomsRoomIdTransitionProposalsResponse400
+	| postApiRoomsRoomIdTransitionProposalsResponse403
+	| postApiRoomsRoomIdTransitionProposalsResponse404
+	| postApiRoomsRoomIdTransitionProposalsResponse409
+	| postApiRoomsRoomIdTransitionProposalsResponse422
+	| postApiRoomsRoomIdTransitionProposalsResponse425
+) & {
+	headers: Headers;
+};
+
+export type postApiRoomsRoomIdTransitionProposalsResponse =
+	| postApiRoomsRoomIdTransitionProposalsResponseSuccess
+	| postApiRoomsRoomIdTransitionProposalsResponseError;
+
+export const getPostApiRoomsRoomIdTransitionProposalsUrl = (roomId: string) => {
+	return `/api/rooms/${roomId}/transition-proposals`;
+};
+
+export const postApiRoomsRoomIdTransitionProposals = async (
+	roomId: string,
+	postApiRoomsRoomIdTransitionProposalsBody: PostApiRoomsRoomIdTransitionProposalsBody,
+	options?: RequestInit,
+): Promise<postApiRoomsRoomIdTransitionProposalsResponse> => {
+	return customFetch<postApiRoomsRoomIdTransitionProposalsResponse>(
+		getPostApiRoomsRoomIdTransitionProposalsUrl(roomId),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(postApiRoomsRoomIdTransitionProposalsBody),
+		},
+	);
+};
+
+export const getPostApiRoomsRoomIdTransitionProposalsMutationOptions = <
+	TError = ErrorType<
+		| PostApiRoomsRoomIdTransitionProposals400
+		| PostApiRoomsRoomIdTransitionProposals403
+		| PostApiRoomsRoomIdTransitionProposals404
+		| PostApiRoomsRoomIdTransitionProposals409
+		| PostApiRoomsRoomIdTransitionProposals422
+		| PostApiRoomsRoomIdTransitionProposals425
+	>,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postApiRoomsRoomIdTransitionProposals>>,
+		TError,
+		{ roomId: string; data: BodyType<PostApiRoomsRoomIdTransitionProposalsBody> },
+		TContext
+	>;
+	request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postApiRoomsRoomIdTransitionProposals>>,
+	TError,
+	{ roomId: string; data: BodyType<PostApiRoomsRoomIdTransitionProposalsBody> },
+	TContext
+> => {
+	const mutationKey = ["postApiRoomsRoomIdTransitionProposals"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postApiRoomsRoomIdTransitionProposals>>,
+		{ roomId: string; data: BodyType<PostApiRoomsRoomIdTransitionProposalsBody> }
+	> = (props) => {
+		const { roomId, data } = props ?? {};
+
+		return postApiRoomsRoomIdTransitionProposals(roomId, data, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiRoomsRoomIdTransitionProposalsMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postApiRoomsRoomIdTransitionProposals>>
+>;
+export type PostApiRoomsRoomIdTransitionProposalsMutationBody =
+	BodyType<PostApiRoomsRoomIdTransitionProposalsBody>;
+export type PostApiRoomsRoomIdTransitionProposalsMutationError = ErrorType<
+	| PostApiRoomsRoomIdTransitionProposals400
+	| PostApiRoomsRoomIdTransitionProposals403
+	| PostApiRoomsRoomIdTransitionProposals404
+	| PostApiRoomsRoomIdTransitionProposals409
+	| PostApiRoomsRoomIdTransitionProposals422
+	| PostApiRoomsRoomIdTransitionProposals425
+>;
+
+/**
+ * @summary Create a phase transition proposal
+ */
+export const usePostApiRoomsRoomIdTransitionProposals = <
+	TError = ErrorType<
+		| PostApiRoomsRoomIdTransitionProposals400
+		| PostApiRoomsRoomIdTransitionProposals403
+		| PostApiRoomsRoomIdTransitionProposals404
+		| PostApiRoomsRoomIdTransitionProposals409
+		| PostApiRoomsRoomIdTransitionProposals422
+		| PostApiRoomsRoomIdTransitionProposals425
+	>,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postApiRoomsRoomIdTransitionProposals>>,
+			TError,
+			{ roomId: string; data: BodyType<PostApiRoomsRoomIdTransitionProposalsBody> },
+			TContext
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postApiRoomsRoomIdTransitionProposals>>,
+	TError,
+	{ roomId: string; data: BodyType<PostApiRoomsRoomIdTransitionProposalsBody> },
+	TContext
+> => {
+	return useMutation(getPostApiRoomsRoomIdTransitionProposalsMutationOptions(options), queryClient);
+};
+
+/**
+ * @summary Get active transition proposal
+ */
+export type getApiRoomsRoomIdTransitionProposalsActiveResponse200 = {
+	data: GetApiRoomsRoomIdTransitionProposalsActive200;
+	status: 200;
+};
+
+export type getApiRoomsRoomIdTransitionProposalsActiveResponse404 = {
+	data: GetApiRoomsRoomIdTransitionProposalsActive404;
+	status: 404;
+};
+
+export type getApiRoomsRoomIdTransitionProposalsActiveResponseSuccess =
+	getApiRoomsRoomIdTransitionProposalsActiveResponse200 & {
+		headers: Headers;
+	};
+export type getApiRoomsRoomIdTransitionProposalsActiveResponseError =
+	getApiRoomsRoomIdTransitionProposalsActiveResponse404 & {
+		headers: Headers;
+	};
+
+export type getApiRoomsRoomIdTransitionProposalsActiveResponse =
+	| getApiRoomsRoomIdTransitionProposalsActiveResponseSuccess
+	| getApiRoomsRoomIdTransitionProposalsActiveResponseError;
+
+export const getGetApiRoomsRoomIdTransitionProposalsActiveUrl = (roomId: string) => {
+	return `/api/rooms/${roomId}/transition-proposals/active`;
+};
+
+export const getApiRoomsRoomIdTransitionProposalsActive = async (
+	roomId: string,
+	options?: RequestInit,
+): Promise<getApiRoomsRoomIdTransitionProposalsActiveResponse> => {
+	return customFetch<getApiRoomsRoomIdTransitionProposalsActiveResponse>(
+		getGetApiRoomsRoomIdTransitionProposalsActiveUrl(roomId),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
+
+export const getGetApiRoomsRoomIdTransitionProposalsActiveQueryKey = (roomId: string) => {
+	return [`/api/rooms/${roomId}/transition-proposals/active`] as const;
+};
+
+export const getGetApiRoomsRoomIdTransitionProposalsActiveQueryOptions = <
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdTransitionProposalsActive>>,
+	TError = ErrorType<GetApiRoomsRoomIdTransitionProposalsActive404>,
+>(
+	roomId: string,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getApiRoomsRoomIdTransitionProposalsActive>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ?? getGetApiRoomsRoomIdTransitionProposalsActiveQueryKey(roomId);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getApiRoomsRoomIdTransitionProposalsActive>>
+	> = ({ signal }) =>
+		getApiRoomsRoomIdTransitionProposalsActive(roomId, { signal, ...requestOptions });
+
+	return { queryKey, queryFn, enabled: !!roomId, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getApiRoomsRoomIdTransitionProposalsActive>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiRoomsRoomIdTransitionProposalsActiveQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getApiRoomsRoomIdTransitionProposalsActive>>
+>;
+export type GetApiRoomsRoomIdTransitionProposalsActiveQueryError =
+	ErrorType<GetApiRoomsRoomIdTransitionProposalsActive404>;
+
+export function useGetApiRoomsRoomIdTransitionProposalsActive<
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdTransitionProposalsActive>>,
+	TError = ErrorType<GetApiRoomsRoomIdTransitionProposalsActive404>,
+>(
+	roomId: string,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getApiRoomsRoomIdTransitionProposalsActive>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getApiRoomsRoomIdTransitionProposalsActive>>,
+					TError,
+					Awaited<ReturnType<typeof getApiRoomsRoomIdTransitionProposalsActive>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiRoomsRoomIdTransitionProposalsActive<
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdTransitionProposalsActive>>,
+	TError = ErrorType<GetApiRoomsRoomIdTransitionProposalsActive404>,
+>(
+	roomId: string,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getApiRoomsRoomIdTransitionProposalsActive>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getApiRoomsRoomIdTransitionProposalsActive>>,
+					TError,
+					Awaited<ReturnType<typeof getApiRoomsRoomIdTransitionProposalsActive>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiRoomsRoomIdTransitionProposalsActive<
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdTransitionProposalsActive>>,
+	TError = ErrorType<GetApiRoomsRoomIdTransitionProposalsActive404>,
+>(
+	roomId: string,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getApiRoomsRoomIdTransitionProposalsActive>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get active transition proposal
+ */
+
+export function useGetApiRoomsRoomIdTransitionProposalsActive<
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdTransitionProposalsActive>>,
+	TError = ErrorType<GetApiRoomsRoomIdTransitionProposalsActive404>,
+>(
+	roomId: string,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getApiRoomsRoomIdTransitionProposalsActive>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+	const queryOptions = getGetApiRoomsRoomIdTransitionProposalsActiveQueryOptions(roomId, options);
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Cast a vote on a transition proposal
+ */
+export type postApiRoomsRoomIdTransitionProposalsProposalIdVotesResponse200 = {
+	data: PostApiRoomsRoomIdTransitionProposalsProposalIdVotes200;
+	status: 200;
+};
+
+export type postApiRoomsRoomIdTransitionProposalsProposalIdVotesResponse404 = {
+	data: PostApiRoomsRoomIdTransitionProposalsProposalIdVotes404;
+	status: 404;
+};
+
+export type postApiRoomsRoomIdTransitionProposalsProposalIdVotesResponse409 = {
+	data: PostApiRoomsRoomIdTransitionProposalsProposalIdVotes409;
+	status: 409;
+};
+
+export type postApiRoomsRoomIdTransitionProposalsProposalIdVotesResponse422 = {
+	data: PostApiRoomsRoomIdTransitionProposalsProposalIdVotes422;
+	status: 422;
+};
+
+export type postApiRoomsRoomIdTransitionProposalsProposalIdVotesResponseSuccess =
+	postApiRoomsRoomIdTransitionProposalsProposalIdVotesResponse200 & {
+		headers: Headers;
+	};
+export type postApiRoomsRoomIdTransitionProposalsProposalIdVotesResponseError = (
+	| postApiRoomsRoomIdTransitionProposalsProposalIdVotesResponse404
+	| postApiRoomsRoomIdTransitionProposalsProposalIdVotesResponse409
+	| postApiRoomsRoomIdTransitionProposalsProposalIdVotesResponse422
+) & {
+	headers: Headers;
+};
+
+export type postApiRoomsRoomIdTransitionProposalsProposalIdVotesResponse =
+	| postApiRoomsRoomIdTransitionProposalsProposalIdVotesResponseSuccess
+	| postApiRoomsRoomIdTransitionProposalsProposalIdVotesResponseError;
+
+export const getPostApiRoomsRoomIdTransitionProposalsProposalIdVotesUrl = (
+	roomId: string,
+	proposalId: string,
+) => {
+	return `/api/rooms/${roomId}/transition-proposals/${proposalId}/votes`;
+};
+
+export const postApiRoomsRoomIdTransitionProposalsProposalIdVotes = async (
+	roomId: string,
+	proposalId: string,
+	postApiRoomsRoomIdTransitionProposalsProposalIdVotesBody: PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBody,
+	options?: RequestInit,
+): Promise<postApiRoomsRoomIdTransitionProposalsProposalIdVotesResponse> => {
+	return customFetch<postApiRoomsRoomIdTransitionProposalsProposalIdVotesResponse>(
+		getPostApiRoomsRoomIdTransitionProposalsProposalIdVotesUrl(roomId, proposalId),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(postApiRoomsRoomIdTransitionProposalsProposalIdVotesBody),
+		},
+	);
+};
+
+export const getPostApiRoomsRoomIdTransitionProposalsProposalIdVotesMutationOptions = <
+	TError = ErrorType<
+		| PostApiRoomsRoomIdTransitionProposalsProposalIdVotes404
+		| PostApiRoomsRoomIdTransitionProposalsProposalIdVotes409
+		| PostApiRoomsRoomIdTransitionProposalsProposalIdVotes422
+	>,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postApiRoomsRoomIdTransitionProposalsProposalIdVotes>>,
+		TError,
+		{
+			roomId: string;
+			proposalId: string;
+			data: BodyType<PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBody>;
+		},
+		TContext
+	>;
+	request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postApiRoomsRoomIdTransitionProposalsProposalIdVotes>>,
+	TError,
+	{
+		roomId: string;
+		proposalId: string;
+		data: BodyType<PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBody>;
+	},
+	TContext
+> => {
+	const mutationKey = ["postApiRoomsRoomIdTransitionProposalsProposalIdVotes"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postApiRoomsRoomIdTransitionProposalsProposalIdVotes>>,
+		{
+			roomId: string;
+			proposalId: string;
+			data: BodyType<PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBody>;
+		}
+	> = (props) => {
+		const { roomId, proposalId, data } = props ?? {};
+
+		return postApiRoomsRoomIdTransitionProposalsProposalIdVotes(
+			roomId,
+			proposalId,
+			data,
+			requestOptions,
+		);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiRoomsRoomIdTransitionProposalsProposalIdVotesMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postApiRoomsRoomIdTransitionProposalsProposalIdVotes>>
+>;
+export type PostApiRoomsRoomIdTransitionProposalsProposalIdVotesMutationBody =
+	BodyType<PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBody>;
+export type PostApiRoomsRoomIdTransitionProposalsProposalIdVotesMutationError = ErrorType<
+	| PostApiRoomsRoomIdTransitionProposalsProposalIdVotes404
+	| PostApiRoomsRoomIdTransitionProposalsProposalIdVotes409
+	| PostApiRoomsRoomIdTransitionProposalsProposalIdVotes422
+>;
+
+/**
+ * @summary Cast a vote on a transition proposal
+ */
+export const usePostApiRoomsRoomIdTransitionProposalsProposalIdVotes = <
+	TError = ErrorType<
+		| PostApiRoomsRoomIdTransitionProposalsProposalIdVotes404
+		| PostApiRoomsRoomIdTransitionProposalsProposalIdVotes409
+		| PostApiRoomsRoomIdTransitionProposalsProposalIdVotes422
+	>,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postApiRoomsRoomIdTransitionProposalsProposalIdVotes>>,
+			TError,
+			{
+				roomId: string;
+				proposalId: string;
+				data: BodyType<PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBody>;
+			},
+			TContext
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postApiRoomsRoomIdTransitionProposalsProposalIdVotes>>,
+	TError,
+	{
+		roomId: string;
+		proposalId: string;
+		data: BodyType<PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBody>;
+	},
+	TContext
+> => {
+	return useMutation(
+		getPostApiRoomsRoomIdTransitionProposalsProposalIdVotesMutationOptions(options),
+		queryClient,
+	);
+};
+
+/**
+ * @summary Reject a transition proposal (admin)
+ */
+export type deleteApiRoomsRoomIdTransitionProposalsProposalIdResponse200 = {
+	data: DeleteApiRoomsRoomIdTransitionProposalsProposalId200;
+	status: 200;
+};
+
+export type deleteApiRoomsRoomIdTransitionProposalsProposalIdResponse401 = {
+	data: DeleteApiRoomsRoomIdTransitionProposalsProposalId401;
+	status: 401;
+};
+
+export type deleteApiRoomsRoomIdTransitionProposalsProposalIdResponse404 = {
+	data: DeleteApiRoomsRoomIdTransitionProposalsProposalId404;
+	status: 404;
+};
+
+export type deleteApiRoomsRoomIdTransitionProposalsProposalIdResponseSuccess =
+	deleteApiRoomsRoomIdTransitionProposalsProposalIdResponse200 & {
+		headers: Headers;
+	};
+export type deleteApiRoomsRoomIdTransitionProposalsProposalIdResponseError = (
+	| deleteApiRoomsRoomIdTransitionProposalsProposalIdResponse401
+	| deleteApiRoomsRoomIdTransitionProposalsProposalIdResponse404
+) & {
+	headers: Headers;
+};
+
+export type deleteApiRoomsRoomIdTransitionProposalsProposalIdResponse =
+	| deleteApiRoomsRoomIdTransitionProposalsProposalIdResponseSuccess
+	| deleteApiRoomsRoomIdTransitionProposalsProposalIdResponseError;
+
+export const getDeleteApiRoomsRoomIdTransitionProposalsProposalIdUrl = (
+	roomId: string,
+	proposalId: string,
+) => {
+	return `/api/rooms/${roomId}/transition-proposals/${proposalId}`;
+};
+
+export const deleteApiRoomsRoomIdTransitionProposalsProposalId = async (
+	roomId: string,
+	proposalId: string,
+	options?: RequestInit,
+): Promise<deleteApiRoomsRoomIdTransitionProposalsProposalIdResponse> => {
+	return customFetch<deleteApiRoomsRoomIdTransitionProposalsProposalIdResponse>(
+		getDeleteApiRoomsRoomIdTransitionProposalsProposalIdUrl(roomId, proposalId),
+		{
+			...options,
+			method: "DELETE",
+		},
+	);
+};
+
+export const getDeleteApiRoomsRoomIdTransitionProposalsProposalIdMutationOptions = <
+	TError = ErrorType<
+		| DeleteApiRoomsRoomIdTransitionProposalsProposalId401
+		| DeleteApiRoomsRoomIdTransitionProposalsProposalId404
+	>,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof deleteApiRoomsRoomIdTransitionProposalsProposalId>>,
+		TError,
+		{ roomId: string; proposalId: string },
+		TContext
+	>;
+	request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof deleteApiRoomsRoomIdTransitionProposalsProposalId>>,
+	TError,
+	{ roomId: string; proposalId: string },
+	TContext
+> => {
+	const mutationKey = ["deleteApiRoomsRoomIdTransitionProposalsProposalId"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof deleteApiRoomsRoomIdTransitionProposalsProposalId>>,
+		{ roomId: string; proposalId: string }
+	> = (props) => {
+		const { roomId, proposalId } = props ?? {};
+
+		return deleteApiRoomsRoomIdTransitionProposalsProposalId(roomId, proposalId, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteApiRoomsRoomIdTransitionProposalsProposalIdMutationResult = NonNullable<
+	Awaited<ReturnType<typeof deleteApiRoomsRoomIdTransitionProposalsProposalId>>
+>;
+
+export type DeleteApiRoomsRoomIdTransitionProposalsProposalIdMutationError = ErrorType<
+	| DeleteApiRoomsRoomIdTransitionProposalsProposalId401
+	| DeleteApiRoomsRoomIdTransitionProposalsProposalId404
+>;
+
+/**
+ * @summary Reject a transition proposal (admin)
+ */
+export const useDeleteApiRoomsRoomIdTransitionProposalsProposalId = <
+	TError = ErrorType<
+		| DeleteApiRoomsRoomIdTransitionProposalsProposalId401
+		| DeleteApiRoomsRoomIdTransitionProposalsProposalId404
+	>,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof deleteApiRoomsRoomIdTransitionProposalsProposalId>>,
+			TError,
+			{ roomId: string; proposalId: string },
+			TContext
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof deleteApiRoomsRoomIdTransitionProposalsProposalId>>,
+	TError,
+	{ roomId: string; proposalId: string },
+	TContext
+> => {
+	return useMutation(
+		getDeleteApiRoomsRoomIdTransitionProposalsProposalIdMutationOptions(options),
+		queryClient,
+	);
+};
+
+/**
+ * @summary Save a transcript segment (called by LiveKit Agent)
+ */
+export type postApiRoomsRoomIdTranscriptsResponse201 = {
+	data: CreateTranscriptResponse;
+	status: 201;
+};
+
+export type postApiRoomsRoomIdTranscriptsResponse401 = {
+	data: PostApiRoomsRoomIdTranscripts401;
+	status: 401;
+};
+
+export type postApiRoomsRoomIdTranscriptsResponse404 = {
+	data: PostApiRoomsRoomIdTranscripts404;
+	status: 404;
+};
+
+export type postApiRoomsRoomIdTranscriptsResponse422 = {
+	data: PostApiRoomsRoomIdTranscripts422;
+	status: 422;
+};
+
+export type postApiRoomsRoomIdTranscriptsResponseSuccess =
+	postApiRoomsRoomIdTranscriptsResponse201 & {
+		headers: Headers;
+	};
+export type postApiRoomsRoomIdTranscriptsResponseError = (
+	| postApiRoomsRoomIdTranscriptsResponse401
+	| postApiRoomsRoomIdTranscriptsResponse404
+	| postApiRoomsRoomIdTranscriptsResponse422
+) & {
+	headers: Headers;
+};
+
+export type postApiRoomsRoomIdTranscriptsResponse =
+	| postApiRoomsRoomIdTranscriptsResponseSuccess
+	| postApiRoomsRoomIdTranscriptsResponseError;
+
+export const getPostApiRoomsRoomIdTranscriptsUrl = (roomId: string) => {
+	return `/api/rooms/${roomId}/transcripts`;
+};
+
+export const postApiRoomsRoomIdTranscripts = async (
+	roomId: string,
+	createTranscript: CreateTranscript,
+	options?: RequestInit,
+): Promise<postApiRoomsRoomIdTranscriptsResponse> => {
+	return customFetch<postApiRoomsRoomIdTranscriptsResponse>(
+		getPostApiRoomsRoomIdTranscriptsUrl(roomId),
+		{
+			...options,
+			method: "POST",
+			headers: { "Content-Type": "application/json", ...options?.headers },
+			body: JSON.stringify(createTranscript),
+		},
+	);
+};
+
+export const getPostApiRoomsRoomIdTranscriptsMutationOptions = <
+	TError = ErrorType<
+		| PostApiRoomsRoomIdTranscripts401
+		| PostApiRoomsRoomIdTranscripts404
+		| PostApiRoomsRoomIdTranscripts422
+	>,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postApiRoomsRoomIdTranscripts>>,
+		TError,
+		{ roomId: string; data: BodyType<CreateTranscript> },
+		TContext
+	>;
+	request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postApiRoomsRoomIdTranscripts>>,
+	TError,
+	{ roomId: string; data: BodyType<CreateTranscript> },
+	TContext
+> => {
+	const mutationKey = ["postApiRoomsRoomIdTranscripts"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postApiRoomsRoomIdTranscripts>>,
+		{ roomId: string; data: BodyType<CreateTranscript> }
+	> = (props) => {
+		const { roomId, data } = props ?? {};
+
+		return postApiRoomsRoomIdTranscripts(roomId, data, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiRoomsRoomIdTranscriptsMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postApiRoomsRoomIdTranscripts>>
+>;
+export type PostApiRoomsRoomIdTranscriptsMutationBody = BodyType<CreateTranscript>;
+export type PostApiRoomsRoomIdTranscriptsMutationError = ErrorType<
+	| PostApiRoomsRoomIdTranscripts401
+	| PostApiRoomsRoomIdTranscripts404
+	| PostApiRoomsRoomIdTranscripts422
+>;
+
+/**
+ * @summary Save a transcript segment (called by LiveKit Agent)
+ */
+export const usePostApiRoomsRoomIdTranscripts = <
+	TError = ErrorType<
+		| PostApiRoomsRoomIdTranscripts401
+		| PostApiRoomsRoomIdTranscripts404
+		| PostApiRoomsRoomIdTranscripts422
+	>,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postApiRoomsRoomIdTranscripts>>,
+			TError,
+			{ roomId: string; data: BodyType<CreateTranscript> },
+			TContext
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postApiRoomsRoomIdTranscripts>>,
+	TError,
+	{ roomId: string; data: BodyType<CreateTranscript> },
+	TContext
+> => {
+	return useMutation(getPostApiRoomsRoomIdTranscriptsMutationOptions(options), queryClient);
+};
+
+/**
+ * @summary List transcripts for a room
+ */
+export type getApiRoomsRoomIdTranscriptsResponse200 = {
+	data: TranscriptListResponse;
+	status: 200;
+};
+
+export type getApiRoomsRoomIdTranscriptsResponse401 = {
+	data: GetApiRoomsRoomIdTranscripts401;
+	status: 401;
+};
+
+export type getApiRoomsRoomIdTranscriptsResponse404 = {
+	data: GetApiRoomsRoomIdTranscripts404;
+	status: 404;
+};
+
+export type getApiRoomsRoomIdTranscriptsResponse422 = {
+	data: GetApiRoomsRoomIdTranscripts422;
+	status: 422;
+};
+
+export type getApiRoomsRoomIdTranscriptsResponseSuccess =
+	getApiRoomsRoomIdTranscriptsResponse200 & {
+		headers: Headers;
+	};
+export type getApiRoomsRoomIdTranscriptsResponseError = (
+	| getApiRoomsRoomIdTranscriptsResponse401
+	| getApiRoomsRoomIdTranscriptsResponse404
+	| getApiRoomsRoomIdTranscriptsResponse422
+) & {
+	headers: Headers;
+};
+
+export type getApiRoomsRoomIdTranscriptsResponse =
+	| getApiRoomsRoomIdTranscriptsResponseSuccess
+	| getApiRoomsRoomIdTranscriptsResponseError;
+
+export const getGetApiRoomsRoomIdTranscriptsUrl = (
+	roomId: string,
+	params?: GetApiRoomsRoomIdTranscriptsParams,
+) => {
+	const normalizedParams = new URLSearchParams();
+
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(key, value === null ? "null" : value.toString());
+		}
+	});
+
+	const stringifiedParams = normalizedParams.toString();
+
+	return stringifiedParams.length > 0
+		? `/api/rooms/${roomId}/transcripts?${stringifiedParams}`
+		: `/api/rooms/${roomId}/transcripts`;
+};
+
+export const getApiRoomsRoomIdTranscripts = async (
+	roomId: string,
+	params?: GetApiRoomsRoomIdTranscriptsParams,
+	options?: RequestInit,
+): Promise<getApiRoomsRoomIdTranscriptsResponse> => {
+	return customFetch<getApiRoomsRoomIdTranscriptsResponse>(
+		getGetApiRoomsRoomIdTranscriptsUrl(roomId, params),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
+
+export const getGetApiRoomsRoomIdTranscriptsQueryKey = (
+	roomId: string,
+	params?: GetApiRoomsRoomIdTranscriptsParams,
+) => {
+	return [`/api/rooms/${roomId}/transcripts`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetApiRoomsRoomIdTranscriptsQueryOptions = <
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdTranscripts>>,
+	TError = ErrorType<
+		| GetApiRoomsRoomIdTranscripts401
+		| GetApiRoomsRoomIdTranscripts404
+		| GetApiRoomsRoomIdTranscripts422
+	>,
+>(
+	roomId: string,
+	params?: GetApiRoomsRoomIdTranscriptsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getApiRoomsRoomIdTranscripts>>, TError, TData>
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ?? getGetApiRoomsRoomIdTranscriptsQueryKey(roomId, params);
+
+	const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiRoomsRoomIdTranscripts>>> = ({
+		signal,
+	}) => getApiRoomsRoomIdTranscripts(roomId, params, { signal, ...requestOptions });
+
+	return { queryKey, queryFn, enabled: !!roomId, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getApiRoomsRoomIdTranscripts>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiRoomsRoomIdTranscriptsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getApiRoomsRoomIdTranscripts>>
+>;
+export type GetApiRoomsRoomIdTranscriptsQueryError = ErrorType<
+	| GetApiRoomsRoomIdTranscripts401
+	| GetApiRoomsRoomIdTranscripts404
+	| GetApiRoomsRoomIdTranscripts422
+>;
+
+export function useGetApiRoomsRoomIdTranscripts<
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdTranscripts>>,
+	TError = ErrorType<
+		| GetApiRoomsRoomIdTranscripts401
+		| GetApiRoomsRoomIdTranscripts404
+		| GetApiRoomsRoomIdTranscripts422
+	>,
+>(
+	roomId: string,
+	params: undefined | GetApiRoomsRoomIdTranscriptsParams,
+	options: {
+		query: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getApiRoomsRoomIdTranscripts>>, TError, TData>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getApiRoomsRoomIdTranscripts>>,
+					TError,
+					Awaited<ReturnType<typeof getApiRoomsRoomIdTranscripts>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiRoomsRoomIdTranscripts<
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdTranscripts>>,
+	TError = ErrorType<
+		| GetApiRoomsRoomIdTranscripts401
+		| GetApiRoomsRoomIdTranscripts404
+		| GetApiRoomsRoomIdTranscripts422
+	>,
+>(
+	roomId: string,
+	params?: GetApiRoomsRoomIdTranscriptsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getApiRoomsRoomIdTranscripts>>, TError, TData>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getApiRoomsRoomIdTranscripts>>,
+					TError,
+					Awaited<ReturnType<typeof getApiRoomsRoomIdTranscripts>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiRoomsRoomIdTranscripts<
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdTranscripts>>,
+	TError = ErrorType<
+		| GetApiRoomsRoomIdTranscripts401
+		| GetApiRoomsRoomIdTranscripts404
+		| GetApiRoomsRoomIdTranscripts422
+	>,
+>(
+	roomId: string,
+	params?: GetApiRoomsRoomIdTranscriptsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getApiRoomsRoomIdTranscripts>>, TError, TData>
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary List transcripts for a room
+ */
+
+export function useGetApiRoomsRoomIdTranscripts<
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdTranscripts>>,
+	TError = ErrorType<
+		| GetApiRoomsRoomIdTranscripts401
+		| GetApiRoomsRoomIdTranscripts404
+		| GetApiRoomsRoomIdTranscripts422
+	>,
+>(
+	roomId: string,
+	params?: GetApiRoomsRoomIdTranscriptsParams,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<Awaited<ReturnType<typeof getApiRoomsRoomIdTranscripts>>, TError, TData>
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+	const queryOptions = getGetApiRoomsRoomIdTranscriptsQueryOptions(roomId, params, options);
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Receive LiveKit webhook events (egress_ended, etc.)
+ */
+export type postApiWebhooksLivekitResponse200 = {
+	data: PostApiWebhooksLivekit200;
+	status: 200;
+};
+
+export type postApiWebhooksLivekitResponse400 = {
+	data: PostApiWebhooksLivekit400;
+	status: 400;
+};
+
+export type postApiWebhooksLivekitResponseSuccess = postApiWebhooksLivekitResponse200 & {
+	headers: Headers;
+};
+export type postApiWebhooksLivekitResponseError = postApiWebhooksLivekitResponse400 & {
+	headers: Headers;
+};
+
+export type postApiWebhooksLivekitResponse =
+	| postApiWebhooksLivekitResponseSuccess
+	| postApiWebhooksLivekitResponseError;
+
+export const getPostApiWebhooksLivekitUrl = () => {
+	return `/api/webhooks/livekit`;
+};
+
+export const postApiWebhooksLivekit = async (
+	unknownNull: unknown | null,
+	options?: RequestInit,
+): Promise<postApiWebhooksLivekitResponse> => {
+	return customFetch<postApiWebhooksLivekitResponse>(getPostApiWebhooksLivekitUrl(), {
+		...options,
+		method: "POST",
+		headers: { "Content-Type": "application/json", ...options?.headers },
+		body: JSON.stringify(unknownNull),
+	});
+};
+
+export const getPostApiWebhooksLivekitMutationOptions = <
+	TError = ErrorType<PostApiWebhooksLivekit400>,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postApiWebhooksLivekit>>,
+		TError,
+		{ data: BodyType<unknown | null> },
+		TContext
+	>;
+	request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postApiWebhooksLivekit>>,
+	TError,
+	{ data: BodyType<unknown | null> },
+	TContext
+> => {
+	const mutationKey = ["postApiWebhooksLivekit"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postApiWebhooksLivekit>>,
+		{ data: BodyType<unknown | null> }
+	> = (props) => {
+		const { data } = props ?? {};
+
+		return postApiWebhooksLivekit(data, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiWebhooksLivekitMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postApiWebhooksLivekit>>
+>;
+export type PostApiWebhooksLivekitMutationBody = BodyType<unknown | null>;
+export type PostApiWebhooksLivekitMutationError = ErrorType<PostApiWebhooksLivekit400>;
+
+/**
+ * @summary Receive LiveKit webhook events (egress_ended, etc.)
+ */
+export const usePostApiWebhooksLivekit = <
+	TError = ErrorType<PostApiWebhooksLivekit400>,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postApiWebhooksLivekit>>,
+			TError,
+			{ data: BodyType<unknown | null> },
+			TContext
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postApiWebhooksLivekit>>,
+	TError,
+	{ data: BodyType<unknown | null> },
+	TContext
+> => {
+	return useMutation(getPostApiWebhooksLivekitMutationOptions(options), queryClient);
 };

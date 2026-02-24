@@ -1,4 +1,5 @@
 import { integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import type { DbPhaseFeatureFlags, PhaseConfig } from "../schemas/phase.schema";
 
 export const rooms = sqliteTable("rooms", {
 	id: text("id").primaryKey(),
@@ -25,22 +26,8 @@ export const phases = sqliteTable("phases", {
 	type: text("type", { enum: ["video", "discussion", "voting", "survey"] }).notNull(),
 	title: text("title").notNull(),
 	sortOrder: integer("sort_order").notNull().default(0),
-	config: text("config", { mode: "json" }).$type<Record<string, unknown>>().default({}),
-	featureFlags: text("feature_flags", { mode: "json" })
-		.$type<{
-			canSpeak?: boolean;
-			canInterrupt?: boolean;
-			canVote?: boolean;
-			speakingTimeSec?: number;
-			interruptionTimeSec?: number;
-			interruptionCooldownSec?: number;
-			maxInterruptions?: number;
-			participantCanProposeTransition?: boolean;
-			transitionMinDurationSec?: number;
-			transitionThreshold?: number;
-			transitionVoteDurationSec?: number;
-		}>()
-		.default({}),
+	config: text("config", { mode: "json" }).$type<PhaseConfig>().default({}),
+	featureFlags: text("feature_flags", { mode: "json" }).$type<DbPhaseFeatureFlags>().default({}),
 	createdAt: integer("created_at", { mode: "timestamp" })
 		.$defaultFn(() => new Date())
 		.notNull(),

@@ -4,19 +4,13 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { CreatePhaseConfig } from "./createPhaseConfig";
-import type { CreatePhaseType } from "./createPhaseType";
-import type { PhaseFeatureFlags } from "./phaseFeatureFlags";
+import type { CreateDiscussionPhase } from "./createDiscussionPhase";
+import type { CreateSurveyPhase } from "./createSurveyPhase";
+import type { CreateVideoPhase } from "./createVideoPhase";
+import type { CreateVotingPhase } from "./createVotingPhase";
 
-export interface CreatePhase {
-	type: CreatePhaseType;
-	/**
-	 * @minLength 1
-	 * @maxLength 200
-	 */
-	title: string;
-	/** @minimum 0 */
-	sortOrder?: number;
-	config?: CreatePhaseConfig;
-	featureFlags?: PhaseFeatureFlags;
-}
+export type CreatePhase =
+	| CreateVideoPhase
+	| CreateDiscussionPhase
+	| CreateVotingPhase
+	| CreateSurveyPhase;

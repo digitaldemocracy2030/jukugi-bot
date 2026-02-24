@@ -5,18 +5,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface PhaseFeatureFlags {
-	canSpeak?: boolean;
-	canInterrupt?: boolean;
-	canVote?: boolean;
-	/** @exclusiveMinimum 0 */
-	speakingTimeSec?: number;
-	/** @exclusiveMinimum 0 */
-	interruptionTimeSec?: number;
-	/** @exclusiveMinimum 0 */
-	interruptionCooldownSec?: number;
-	/** @exclusiveMinimum 0 */
-	maxInterruptions?: number;
+export interface VotingPhaseFeatureFlags {
 	participantCanProposeTransition?: boolean;
 	/** @minimum 0 */
 	transitionMinDurationSec?: number;
@@ -27,4 +16,5 @@ export interface PhaseFeatureFlags {
 	transitionThreshold?: number;
 	/** @exclusiveMinimum 0 */
 	transitionVoteDurationSec?: number;
+	canVote?: boolean;
 }

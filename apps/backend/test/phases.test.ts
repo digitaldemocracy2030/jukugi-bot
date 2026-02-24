@@ -123,6 +123,213 @@ describe("POST /api/rooms/:roomId/phases", () => {
 		expect(response.status).toBeGreaterThanOrEqual(400);
 		expect(response.status).toBeLessThan(500);
 	});
+
+	it("should return 422 when video phase receives canSpeak flag", async () => {
+		const roomId = await createTestRoom(env.DB, { slug: "video-no-speak-room" });
+
+		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/phases`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Admin-Key": ADMIN_KEY,
+			},
+			body: JSON.stringify({
+				type: "video",
+				title: "Video Phase",
+				featureFlags: { canSpeak: true },
+			}),
+		});
+
+		expect(response.status).toBe(422);
+	});
+
+	it("should return 422 when discussion phase receives canVote flag", async () => {
+		const roomId = await createTestRoom(env.DB, { slug: "discussion-no-vote-room" });
+
+		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/phases`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Admin-Key": ADMIN_KEY,
+			},
+			body: JSON.stringify({
+				type: "discussion",
+				title: "Discussion Phase",
+				featureFlags: { canVote: true },
+			}),
+		});
+
+		expect(response.status).toBe(422);
+	});
+
+	it("should store and return videoUrl and autoAdvance for video phase", async () => {
+		const roomId = await createTestRoom(env.DB, { slug: "video-config-room" });
+
+		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/phases`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Admin-Key": ADMIN_KEY,
+			},
+			body: JSON.stringify({
+				type: "video",
+				title: "Video Phase",
+				config: { videoUrl: "https://example.com/video.mp4", autoAdvance: true },
+			}),
+		});
+
+		expect(response.status).toBe(201);
+		const data = (await response.json()) as {
+			type: string;
+			config: { videoUrl?: string; autoAdvance?: boolean };
+		};
+		expect(data.type).toBe("video");
+		expect(data.config.videoUrl).toBe("https://example.com/video.mp4");
+		expect(data.config.autoAdvance).toBe(true);
+	});
+
+	it("should store and return topic for discussion phase", async () => {
+		const roomId = await createTestRoom(env.DB, { slug: "discussion-config-room" });
+
+		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/phases`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Admin-Key": ADMIN_KEY,
+			},
+			body: JSON.stringify({
+				type: "discussion",
+				title: "Discussion Phase",
+				config: { topic: "Climate change" },
+			}),
+		});
+
+		expect(response.status).toBe(201);
+		const data = (await response.json()) as {
+			type: string;
+			config: { topic?: string };
+		};
+		expect(data.type).toBe("discussion");
+		expect(data.config.topic).toBe("Climate change");
+	});
+
+	it("should store and return question and options for voting phase", async () => {
+		const roomId = await createTestRoom(env.DB, { slug: "voting-config-room" });
+
+		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/phases`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Admin-Key": ADMIN_KEY,
+			},
+			body: JSON.stringify({
+				type: "voting",
+				title: "Voting Phase",
+				config: { question: "Which option?", options: ["Option A", "Option B"] },
+			}),
+		});
+
+		expect(response.status).toBe(201);
+		const data = (await response.json()) as {
+			type: string;
+			config: { question?: string; options?: string[] };
+		};
+		expect(data.type).toBe("voting");
+		expect(data.config.question).toBe("Which option?");
+		expect(data.config.options).toEqual(["Option A", "Option B"]);
+	});
+
+	it("should store and return questions array for survey phase", async () => {
+		const roomId = await createTestRoom(env.DB, { slug: "survey-config-room" });
+
+		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/phases`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Admin-Key": ADMIN_KEY,
+			},
+			body: JSON.stringify({
+				type: "survey",
+				title: "Survey Phase",
+				config: {
+					questions: [
+						{ id: "q1", text: "How are you?", type: "text" },
+						{ id: "q2", text: "Rate your experience", type: "scale" },
+					],
+				},
+			}),
+		});
+
+		expect(response.status).toBe(201);
+		const data = (await response.json()) as {
+			type: string;
+			config: { questions?: { id: string; text: string; type: string }[] };
+		};
+		expect(data.type).toBe("survey");
+		expect(data.config.questions).toHaveLength(2);
+		expect(data.config.questions?.[0].id).toBe("q1");
+		expect(data.config.questions?.[1].type).toBe("scale");
+	});
+
+	it("should store and return discussion-specific featureFlags", async () => {
+		const roomId = await createTestRoom(env.DB, { slug: "discussion-flags-room" });
+
+		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/phases`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Admin-Key": ADMIN_KEY,
+			},
+			body: JSON.stringify({
+				type: "discussion",
+				title: "Discussion Phase",
+				featureFlags: {
+					canSpeak: true,
+					speakingTimeSec: 90,
+					canInterrupt: true,
+					maxInterruptions: 2,
+				},
+			}),
+		});
+
+		expect(response.status).toBe(201);
+		const data = (await response.json()) as {
+			type: string;
+			featureFlags: Record<string, unknown>;
+		};
+		expect(data.type).toBe("discussion");
+		expect(data.featureFlags).toMatchObject({
+			canSpeak: true,
+			speakingTimeSec: 90,
+			canInterrupt: true,
+			maxInterruptions: 2,
+		});
+	});
+
+	it("should store and return voting-specific canVote featureFlag", async () => {
+		const roomId = await createTestRoom(env.DB, { slug: "voting-flags-room" });
+
+		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/phases`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Admin-Key": ADMIN_KEY,
+			},
+			body: JSON.stringify({
+				type: "voting",
+				title: "Voting Phase",
+				featureFlags: { canVote: true },
+			}),
+		});
+
+		expect(response.status).toBe(201);
+		const data = (await response.json()) as {
+			type: string;
+			featureFlags: Record<string, unknown>;
+		};
+		expect(data.type).toBe("voting");
+		expect(data.featureFlags.canVote).toBe(true);
+	});
 });
 
 describe("GET /api/rooms/:roomId/phases", () => {
@@ -167,10 +374,10 @@ describe("GET /api/rooms/:roomId/phases", () => {
 		expect(response.status).toBe(404);
 	});
 
-	it("should return 401 without admin key", async () => {
+	it("should be accessible without admin key (public endpoint)", async () => {
 		const roomId = await createTestRoom(env.DB, { slug: "public-phases-room" });
 		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/phases`);
-		expect(response.status).toBe(401);
+		expect(response.status).toBe(200);
 	});
 });
 

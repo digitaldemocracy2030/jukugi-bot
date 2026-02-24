@@ -45,6 +45,7 @@ export async function startRoomRecording(
 		bucket: storage.bucket,
 		region: storage.region,
 		endpoint: storage.endpoint,
+		forcePathStyle: true,
 	});
 
 	const fileOutput = new EncodedFileOutput({

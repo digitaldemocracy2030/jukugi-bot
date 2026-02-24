@@ -41,5 +41,8 @@ coverage/
 .cache/
 .temp/
 
+# LiveKit
+livekit.yaml
+
 # Claude
 .claude/worktrees

@@ -15,7 +15,7 @@ export function AdminLayout() {
 	return (
 		<div className="min-h-screen flex flex-col bg-muted/20">
 			<AdminHeader />
-			<main className="flex-1 container max-w-5xl mx-auto px-4 py-8">
+			<main className="flex-1 w-full max-w-[1400px] mx-auto px-6 py-6">
 				<Outlet />
 			</main>
 		</div>

@@ -9,9 +9,11 @@ import {
 	usePostApiRoomsRoomIdQueueSkip,
 } from "../../../../src/api/gen/breakoutDeliberationOSAPI";
 import { useSpeakingCheck } from "../../../hooks/use-speaking-check";
+import { useTranscription } from "../../../hooks/use-transcription";
 import type { RoomMetadata } from "../../../types/room-metadata";
 import { Badge, Button, ConfirmDialog, SpeakerTimer, Stack, Typography } from "../../design-system";
 import { ParticipantSidebar } from "../participant-sidebar";
+import { TranscriptionPanel } from "../transcription-panel";
 import { ProposeTransitionButton } from "../transition/propose-transition-button";
 import { TransitionVotePanel } from "../transition/transition-vote-panel";
 import { VideoStage } from "../video-stage";
@@ -66,6 +68,7 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 	const skipSpeakerMutation = usePostApiRoomsRoomIdQueueSkip();
 	const endInterruptionMutation = usePostApiRoomsRoomIdInterruptParticipantIdEnd();
 
+	const transcriptionEntries = useTranscription();
 	const [interruptDialogOpen, setInterruptDialogOpen] = useState(false);
 
 	const participantMeta = (() => {
@@ -279,6 +282,9 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 						</Stack>
 					</section>
 				)}
+
+				{/* Transcription */}
+				<TranscriptionPanel entries={transcriptionEntries} />
 
 				{/* Phase transition proposal */}
 				<section className="border-t pt-4 space-y-3">

@@ -1,0 +1,48 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+      target: development
+    container_name: my-app-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./apps/frontend/app:/app/apps/frontend/app:ro
+      - ./apps/frontend/public:/app/apps/frontend/public:ro
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:8787}
+      - VITE_LIVEKIT_URL=${VITE_LIVEKIT_URL}
+    stdin_open: true
+    tty: true
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+      target: development
+    container_name: my-app-backend
+    ports:
+      - "8787:8787"
+    volumes:
+      - ./apps/backend/src:/app/apps/backend/src:ro
+      - backend_wrangler:/app/apps/backend/.wrangler
+    environment:
+      - LIVEKIT_URL=${LIVEKIT_URL}
+      - LIVEKIT_API_KEY=${LIVEKIT_API_KEY}
+      - LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET}
+      - ADMIN_API_KEY=${ADMIN_API_KEY}
+    stdin_open: true
+    tty: true
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  backend_wrangler:

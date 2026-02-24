@@ -1,0 +1,19 @@
+# Local development environment variables
+ENVIRONMENT=development
+ADMIN_API_KEY=your-admin-api-key-here
+LIVEKIT_API_KEY=your-livekit-api-key
+LIVEKIT_API_SECRET=your-livekit-api-secret
+
+# Cloudflare R2 — LiveKit Egress S3 credentials (recording disabled if STORAGE_ENDPOINT is absent)
+# The R2 bucket itself is managed via [[r2_buckets]] binding in wrangler.toml.
+# These vars are only needed so LiveKit Egress (external service) can upload via S3 API.
+STORAGE_ENDPOINT=https://<account_id>.r2.cloudflarestorage.com
+STORAGE_ACCESS_KEY=your-r2-access-key
+STORAGE_SECRET_KEY=your-r2-secret-key
+STORAGE_PUBLIC_URL=https://recordings.example.com
+
+# LiveKit webhook signature (falls back to LIVEKIT_API_SECRET if omitted)
+LIVEKIT_WEBHOOK_SECRET=
+
+# Transcription agent name — dispatch disabled if absent
+TRANSCRIPTION_AGENT_NAME=transcription-agent

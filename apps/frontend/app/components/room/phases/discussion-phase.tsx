@@ -5,12 +5,19 @@ import {
 	usePostApiRoomsRoomIdInterrupt,
 	usePostApiRoomsRoomIdInterruptParticipantIdEnd,
 	usePostApiRoomsRoomIdQueueJoin,
-	usePostApiRoomsRoomIdQueueNext,
-	usePostApiRoomsRoomIdQueueSkip,
 } from "../../../../src/api/gen/breakoutDeliberationOSAPI";
 import { useSpeakingCheck } from "../../../hooks/use-speaking-check";
 import type { RoomMetadata } from "../../../types/room-metadata";
-import { Badge, Button, ConfirmDialog, SpeakerTimer, Stack, Typography } from "../../design-system";
+import {
+	Badge,
+	ConfirmDialog,
+	Divider,
+	HandRaiseButton,
+	SpeakerTimer,
+	SplitPane,
+	Stack,
+	Typography,
+} from "../../design-system";
 import { ParticipantSidebar } from "../participant-sidebar";
 import { ProposeTransitionButton } from "../transition/propose-transition-button";
 import { TransitionVotePanel } from "../transition/transition-vote-panel";
@@ -18,7 +25,6 @@ import { VideoStage } from "../video-stage";
 
 const DEFAULT_SPEAKING_SECONDS = 120;
 
-/** Compute remaining seconds from a speakingUntil timestamp, updating every 500ms. */
 function useCountdown(speakingUntil: number | undefined): number {
 	const [remaining, setRemaining] = useState(() =>
 		Math.max(0, Math.ceil(((speakingUntil ?? 0) - Date.now()) / 1000)),
@@ -62,8 +68,6 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 	const joinQueueMutation = usePostApiRoomsRoomIdQueueJoin();
 	const leaveQueueMutation = useDeleteApiRoomsRoomIdQueueLeave();
 	const interruptMutation = usePostApiRoomsRoomIdInterrupt();
-	const nextSpeakerMutation = usePostApiRoomsRoomIdQueueNext();
-	const skipSpeakerMutation = usePostApiRoomsRoomIdQueueSkip();
 	const endInterruptionMutation = usePostApiRoomsRoomIdInterruptParticipantIdEnd();
 
 	const [interruptDialogOpen, setInterruptDialogOpen] = useState(false);
@@ -130,158 +134,163 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 		setInterruptDialogOpen(false);
 	};
 
+	const queuePosition = speakerQueue.queue.findIndex((q) => q.participantId === myId) + 1;
+
+	const sidebar = (
+		<ParticipantSidebar
+			metadata={metadata}
+			roomId={roomId}
+			isFacilitator={isFacilitator}
+			currentParticipantId={myId}
+		/>
+	);
+
 	return (
-		<div className="flex h-full">
-			{/* Main content */}
-			<div className="flex-1 flex flex-col gap-4 p-4 overflow-y-auto">
+		<SplitPane aside={sidebar} asideWidth={260} asideOpen={true}>
+			<div className="flex flex-col h-full overflow-y-auto">
 				{/* Video stage */}
-				<VideoStage metadata={metadata} micAllowed={isCurrentSpeaker || isInterrupting} />
+				<div className="p-4 pb-2">
+					<VideoStage metadata={metadata} micAllowed={isCurrentSpeaker || isInterrupting} />
+				</div>
 
-				{/* Active speaker / timer */}
-				<section className="flex flex-col items-center gap-3 py-4">
-					{currentSpeakerEntry ? (
-						<SpeakerTimer
-							remainingSeconds={remainingSeconds}
-							totalSeconds={DEFAULT_SPEAKING_SECONDS}
-							speakerName={
-								isCurrentSpeaker ? `${currentSpeakerName}（あなた）` : currentSpeakerName
-							}
+				{/* Speaker timer / status */}
+				<div className="px-4 py-3">
+					<Stack direction="vertical" align="center" gap={3}>
+						{currentSpeakerEntry ? (
+							<SpeakerTimer
+								remainingSeconds={remainingSeconds}
+								totalSeconds={DEFAULT_SPEAKING_SECONDS}
+								speakerName={
+									isCurrentSpeaker ? `${currentSpeakerName}（あなた）` : currentSpeakerName
+								}
+							/>
+						) : (
+							<Typography variant="body" color="muted">
+								現在の発言者はいません
+							</Typography>
+						)}
+
+						{/* Interruptions */}
+						{speakerQueue.interruptions.length > 0 && (
+							<Stack direction="horizontal" gap={2} wrap justify="center">
+								{speakerQueue.interruptions.map((i) => (
+									<Badge key={i.participantId} variant="solid" colorScheme="destructive">
+										{i.displayName}
+									</Badge>
+								))}
+							</Stack>
+						)}
+					</Stack>
+				</div>
+
+				<Divider />
+
+				{/* Actions — Hand raise + interrupt using design-system HandRaiseButton */}
+				<div className="px-4 py-3">
+					<Stack direction="horizontal" gap={3} justify="center" wrap>
+						<HandRaiseButton
+							mode={isInQueue ? "cancel-request" : "request-speak"}
+							onClick={handleQueueToggle}
+							disabled={!featureFlags.canSpeak || isCurrentSpeaker}
+							loading={isQueueLoading}
+							queuePosition={isInQueue ? queuePosition : undefined}
 						/>
-					) : (
-						<Typography variant="body" color="muted">
-							現在の発言者はいません
-						</Typography>
-					)}
-
-					{/* Interruptions */}
-					{speakerQueue.interruptions.length > 0 && (
-						<Stack direction="horizontal" gap={2} wrap justify="center">
-							{speakerQueue.interruptions.map((i) => (
-								<Badge key={i.participantId} variant="solid" colorScheme="destructive">
-									{i.displayName}
-								</Badge>
-							))}
-						</Stack>
-					)}
-				</section>
-
-				{/* Action buttons */}
-				<Stack direction="horizontal" gap={3} justify="center" wrap>
-					{/* Raise hand / cancel */}
-					<Button
-						variant={isInQueue ? "secondary" : "primary"}
-						disabled={!featureFlags.canSpeak || isCurrentSpeaker || isQueueLoading}
-						loading={isQueueLoading}
-						onClick={handleQueueToggle}
-					>
-						{isInQueue ? "挙手取消" : "挙手"}
-					</Button>
-
-					{/* Interrupt with confirmation */}
-					<Button
-						variant="outline"
-						disabled={
-							!featureFlags.canInterrupt ||
-							isInterrupting ||
-							maxInterruptionsReached ||
-							isInterruptLoading
-						}
-						loading={isInterruptLoading}
-						onClick={() => setInterruptDialogOpen(true)}
-					>
-						割り込み
-					</Button>
-					<ConfirmDialog
-						open={interruptDialogOpen}
-						onOpenChange={setInterruptDialogOpen}
-						title="割り込み確認"
-						description="現在の発言に割り込みますか？割り込みは短時間のみ許可されます。"
-						confirmLabel="割り込む"
-						cancelLabel="キャンセル"
-						onConfirm={handleInterrupt}
-					/>
-				</Stack>
+						<HandRaiseButton
+							mode="request-interrupt"
+							onClick={() => setInterruptDialogOpen(true)}
+							disabled={!featureFlags.canInterrupt || isInterrupting || maxInterruptionsReached}
+							disabledReason={
+								maxInterruptionsReached
+									? "割り込みの上限に達しています"
+									: !featureFlags.canInterrupt
+										? "割り込みは現在許可されていません"
+										: undefined
+							}
+							loading={isInterruptLoading}
+						/>
+						<ConfirmDialog
+							open={interruptDialogOpen}
+							onOpenChange={setInterruptDialogOpen}
+							title="割り込み確認"
+							description="現在の発言に割り込みますか？割り込みは短時間のみ許可されます。"
+							confirmLabel="割り込む"
+							cancelLabel="キャンセル"
+							onConfirm={handleInterrupt}
+						/>
+					</Stack>
+				</div>
 
 				{/* Speaking queue */}
-				<section>
-					<Typography variant="caption" weight="semibold" className="mb-2 uppercase tracking-wide">
-						発言待ち ({speakerQueue.queue.length})
-					</Typography>
-					{speakerQueue.queue.length === 0 ? (
-						<Typography variant="body" color="muted">
-							発言待ちの参加者はいません
+				<div className="px-4 py-3">
+					<Stack direction="vertical" gap={2}>
+						<Typography variant="caption" className="uppercase tracking-wide">
+							発言待ち ({speakerQueue.queue.length})
 						</Typography>
-					) : (
-						<ol className="flex flex-col gap-1">
-							{speakerQueue.queue.map((entry, index) => {
-								const isMe = entry.participantId === myId;
-								return (
-									<li
-										key={entry.participantId}
-										className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm ${
-											isMe ? "bg-primary/10 font-semibold" : "bg-muted/40"
-										}`}
-									>
-										<span className="text-muted-foreground w-5 text-right shrink-0">
-											{index + 1}.
-										</span>
-										<span className="flex-1 truncate">
-											{entry.displayName}
-											{isMe && <span className="ml-1 text-xs text-primary">（あなた）</span>}
-										</span>
-									</li>
-								);
-							})}
-						</ol>
-					)}
-				</section>
+						{speakerQueue.queue.length === 0 ? (
+							<Typography variant="body-sm" color="muted">
+								発言待ちの参加者はいません
+							</Typography>
+						) : (
+							<ol className="flex flex-col gap-1">
+								{speakerQueue.queue.map((entry, index) => {
+									const isMe = entry.participantId === myId;
+									return (
+										<li
+											key={entry.participantId}
+											className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm ${
+												isMe ? "bg-primary/10 font-semibold" : "bg-muted/40"
+											}`}
+										>
+											<span className="text-muted-foreground w-5 text-right shrink-0">
+												{index + 1}.
+											</span>
+											<span className="flex-1 truncate">
+												{entry.displayName}
+												{isMe && <span className="ml-1 text-xs text-primary">（あなた）</span>}
+											</span>
+										</li>
+									);
+								})}
+							</ol>
+						)}
+					</Stack>
+				</div>
 
-				{/* Facilitator-only queue management */}
+				{/* Facilitator queue management */}
 				{isFacilitator && (
-					<section className="border-t pt-4">
-						<Typography
-							variant="caption"
-							weight="semibold"
-							className="mb-2 uppercase tracking-wide"
-						>
-							ファシリテーター操作
-						</Typography>
-						<Stack direction="horizontal" gap={2} wrap>
-							<Button
-								size="sm"
-								variant="outline"
-								onClick={() => nextSpeakerMutation.mutate({ roomId, data: {} })}
-							>
-								次の発言者
-							</Button>
-							<Button
-								size="sm"
-								variant="outline"
-								onClick={() => skipSpeakerMutation.mutate({ roomId })}
-							>
-								スキップ
-							</Button>
-							{speakerQueue.interruptions.map((i) => (
-								<Button
-									key={i.participantId}
-									size="sm"
-									variant="destructive"
-									onClick={() =>
-										endInterruptionMutation.mutate({
-											roomId,
-											participantId: i.participantId,
-										})
-									}
-								>
-									割り込み終了: {i.displayName}
-								</Button>
-							))}
-						</Stack>
-					</section>
+					<>
+						<Divider />
+						<div className="px-4 py-3">
+							<Stack direction="vertical" gap={2}>
+								<Typography variant="caption" className="uppercase tracking-wide">
+									ファシリテーター操作
+								</Typography>
+								<Stack direction="horizontal" gap={2} wrap>
+									{speakerQueue.interruptions.map((i) => (
+										<Badge
+											key={i.participantId}
+											variant="solid"
+											colorScheme="destructive"
+											removable
+											onRemove={() =>
+												endInterruptionMutation.mutate({
+													roomId,
+													participantId: i.participantId,
+												})
+											}
+										>
+											{i.displayName}
+										</Badge>
+									))}
+								</Stack>
+							</Stack>
+						</div>
+					</>
 				)}
 
-				{/* Phase transition proposal */}
-				<section className="border-t pt-4 space-y-3">
+				{/* Phase transition */}
+				<Divider />
+				<div className="px-4 py-3">
 					{metadata?.transitionProposal ? (
 						<TransitionVotePanel
 							roomId={roomId}
@@ -297,11 +306,8 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 							disabled={false}
 						/>
 					)}
-				</section>
+				</div>
 			</div>
-
-			{/* Sidebar */}
-			<ParticipantSidebar metadata={metadata} roomId={roomId} isFacilitator={isFacilitator} />
-		</div>
+		</SplitPane>
 	);
 }

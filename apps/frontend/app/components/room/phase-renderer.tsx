@@ -13,11 +13,16 @@ export function PhaseRenderer({ metadata, roomId }: PhaseRendererProps) {
 
 	if (phaseType === null) {
 		return (
-			<Stack direction="vertical" align="center" justify="center" className="h-64 flex-1" gap={3}>
-				<Spinner size="md" />
-				<Typography variant="body" color="muted">
-					ファシリテーターの開始を待っています...
-				</Typography>
+			<Stack direction="vertical" align="center" justify="center" className="flex-1" gap={4}>
+				<Spinner size="lg" />
+				<Stack direction="vertical" align="center" gap={1}>
+					<Typography variant="h4" align="center">
+						セッション開始を待っています
+					</Typography>
+					<Typography variant="body-sm" color="muted" align="center">
+						ファシリテーターがフェーズを開始するとここに表示されます
+					</Typography>
+				</Stack>
 			</Stack>
 		);
 	}
@@ -30,11 +35,14 @@ export function PhaseRenderer({ metadata, roomId }: PhaseRendererProps) {
 		return <DiscussionPhase metadata={metadata} roomId={roomId} />;
 	}
 
-	// "voting" | "survey" — placeholder with phase name
+	// "voting" | "survey" — placeholder
 	return (
-		<Stack direction="vertical" align="center" justify="center" className="h-64 flex-1" gap={2}>
-			<Typography variant="body" color="muted">
-				{phaseType === "voting" ? "投票フェーズ（実装予定）" : "アンケートフェーズ（実装予定）"}
+		<Stack direction="vertical" align="center" justify="center" className="flex-1" gap={3}>
+			<Typography variant="h4" color="muted" align="center">
+				{phaseType === "voting" ? "投票フェーズ" : "アンケートフェーズ"}
+			</Typography>
+			<Typography variant="body-sm" color="muted" align="center">
+				このフェーズは現在開発中です
 			</Typography>
 		</Stack>
 	);

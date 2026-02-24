@@ -15,7 +15,7 @@ function LiveRoomInner({ roomId }: { roomId: string }) {
 	const metadata = useRoomMetadata();
 
 	return (
-		<div className="flex flex-col min-h-screen bg-background">
+		<div className="flex flex-col h-screen bg-background">
 			<RoomAudioRenderer />
 			<main className="flex-1 flex overflow-hidden">
 				<PhaseRenderer metadata={metadata} roomId={roomId} />

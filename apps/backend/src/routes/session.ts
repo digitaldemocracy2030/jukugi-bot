@@ -19,10 +19,7 @@ import {
 	phaseFeatureFlagsToRoom,
 	serializeMetadata,
 } from "../livekit/metadata";
-import {
-	ensureLiveKitRoom,
-	updateRoomMetadata,
-} from "../livekit/room-service";
+import { ensureLiveKitRoom, updateRoomMetadata } from "../livekit/room-service";
 import { generateParticipantToken } from "../livekit/token";
 import { adminAuth } from "../middleware/admin-auth";
 import { activateRoomRoute, joinRoomRoute, phaseTransitionRoute } from "../schemas/session.schema";

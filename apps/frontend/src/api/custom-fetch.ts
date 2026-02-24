@@ -4,7 +4,11 @@ const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8787";
 
 export async function customFetch<T>(url: string, options?: RequestInit): Promise<T> {
 	const adminKey = typeof window !== "undefined" ? localStorage.getItem("admin_api_key") : null;
-	const extraHeaders: Record<string, string> = adminKey ? { "X-Admin-Key": adminKey } : {};
+	const participantToken =
+		typeof window !== "undefined" ? localStorage.getItem("osodp_participant_token") : null;
+	const extraHeaders: Record<string, string> = {};
+	if (adminKey) extraHeaders["X-Admin-Key"] = adminKey;
+	if (participantToken) extraHeaders["X-Participant-Token"] = participantToken;
 
 	try {
 		const res = await axios({

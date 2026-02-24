@@ -1,12 +1,12 @@
 import { z } from "@hono/zod-openapi";
 
-export const CreateTransitionProposalSchema = z.object({
-	participantId: z.string().min(1),
-	toPhaseId: z.string().optional(),
-});
+export const CreateTransitionProposalSchema = z
+	.object({
+		toPhaseId: z.string().optional(),
+	})
+	.openapi("CreateTransitionProposal");
 
 export const CastTransitionVoteSchema = z.object({
-	participantId: z.string().min(1),
 	choice: z.enum(["yes", "no"]),
 });
 

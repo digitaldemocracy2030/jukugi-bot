@@ -5,7 +5,4 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface QueueLeave {
-	/** @minLength 1 */
-	participantId: string;
-}
+export interface QueueLeave { [key: string]: unknown }

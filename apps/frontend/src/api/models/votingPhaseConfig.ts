@@ -6,6 +6,6 @@
  */
 
 export interface VotingPhaseConfig {
-	question?: string;
-	options?: string[];
+  question?: string;
+  options?: string[];
 }

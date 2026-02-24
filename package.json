@@ -6,6 +6,8 @@
 		"dev": "pnpm --parallel --filter \"./apps/*\" dev",
 		"build": "pnpm --filter \"./apps/*\" build",
 		"typecheck": "pnpm --parallel --filter \"./apps/*\" typecheck",
+		"backend": "pnpm --filter backend",
+		"frontend": "pnpm --filter apps-frontend",
 		"biome:format": "biome format --write",
 		"biome:check": "biome check --write"
 	},

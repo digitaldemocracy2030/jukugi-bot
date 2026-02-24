@@ -21,17 +21,20 @@ export function useTransitionVote(roomId: string, adminKey?: string) {
 	const [isVoting, setIsVoting] = useState(false);
 	const [isRejecting, setIsRejecting] = useState(false);
 
-	const propose = async (participantId: string, toPhaseId?: string) => {
+	const propose = async (_participantId: string, toPhaseId?: string) => {
 		setIsProposing(true);
 		try {
 			const headers: Record<string, string> = {
 				"Content-Type": "application/json",
 			};
 			if (adminKey) headers["X-Admin-Key"] = adminKey;
+			const participantToken =
+				typeof window !== "undefined" ? localStorage.getItem("osodp_participant_token") : null;
+			if (participantToken) headers["X-Participant-Token"] = participantToken;
 			const res = await fetch(`${API_BASE}/api/rooms/${roomId}/transition-proposals`, {
 				method: "POST",
 				headers,
-				body: JSON.stringify({ participantId, toPhaseId }),
+				body: JSON.stringify({ toPhaseId }),
 			});
 			if (!res.ok) {
 				const err = await res.json().catch(() => ({}));
@@ -43,15 +46,21 @@ export function useTransitionVote(roomId: string, adminKey?: string) {
 		}
 	};
 
-	const vote = async (proposalId: string, participantId: string, choice: "yes" | "no") => {
+	const vote = async (proposalId: string, _participantId: string, choice: "yes" | "no") => {
 		setIsVoting(true);
 		try {
+			const headers: Record<string, string> = {
+				"Content-Type": "application/json",
+			};
+			const participantToken =
+				typeof window !== "undefined" ? localStorage.getItem("osodp_participant_token") : null;
+			if (participantToken) headers["X-Participant-Token"] = participantToken;
 			const res = await fetch(
 				`${API_BASE}/api/rooms/${roomId}/transition-proposals/${proposalId}/votes`,
 				{
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ participantId, choice }),
+					headers,
+					body: JSON.stringify({ choice }),
 				},
 			);
 			if (!res.ok) {

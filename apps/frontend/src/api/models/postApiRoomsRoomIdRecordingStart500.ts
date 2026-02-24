@@ -6,5 +6,5 @@
  */
 
 export type PostApiRoomsRoomIdRecordingStart500 = {
-	error: string;
+  error: string;
 };

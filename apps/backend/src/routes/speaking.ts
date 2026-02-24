@@ -11,6 +11,7 @@ import {
 } from "../livekit/room-service";
 import type { RoomMetadata, SpeakerQueue } from "../livekit/types";
 import { adminAuth } from "../middleware/admin-auth";
+import { type ParticipantRoomVariables, participantRoomAuth } from "../middleware/participant-auth";
 import {
 	interruptEndRoute,
 	interruptRequestRoute,
@@ -27,7 +28,7 @@ type Bindings = {
 	ENVIRONMENT: string;
 };
 
-const app = new OpenAPIHono<{ Bindings: Bindings }>();
+const app = new OpenAPIHono<{ Bindings: Bindings; Variables: ParticipantRoomVariables }>();
 
 const DEFAULT_SPEAKING_TIME_SEC = 60;
 const DEFAULT_INTERRUPTION_TIME_SEC = 15;
@@ -183,9 +184,11 @@ async function advanceToNextSpeaker(
 
 // ─── POST /api/rooms/:roomId/queue/join ───────────────────────────────────────
 
+app.use("/api/rooms/:roomId/queue/join", participantRoomAuth);
 app.openapi(queueJoinRoute, async (c) => {
 	const { roomId } = c.req.valid("param");
-	const { participantId, displayName } = c.req.valid("json");
+	const { displayName } = c.req.valid("json");
+	const participantId = c.get("participant").id;
 
 	const db = drizzle(c.env.DB);
 	const room = await db.select().from(rooms).where(eq(rooms.id, roomId)).get();
@@ -219,7 +222,7 @@ app.openapi(queueJoinRoute, async (c) => {
 		const speakingTimeSec = phase?.featureFlags?.speakingTimeSec ?? DEFAULT_SPEAKING_TIME_SEC;
 
 		const advancedQueue = await advanceToNextSpeaker(
-		db,
+			db,
 			livekitRoomName(roomId),
 			{ ...meta, speakerQueue: newQueue },
 			speakingTimeSec,
@@ -236,9 +239,10 @@ app.openapi(queueJoinRoute, async (c) => {
 
 // ─── DELETE /api/rooms/:roomId/queue/leave ────────────────────────────────────
 
+app.use("/api/rooms/:roomId/queue/leave", participantRoomAuth);
 app.openapi(queueLeaveRoute, async (c) => {
 	const { roomId } = c.req.valid("param");
-	const { participantId } = c.req.valid("json");
+	const participantId = c.get("participant").id;
 
 	const db = drizzle(c.env.DB);
 	const room = await db.select().from(rooms).where(eq(rooms.id, roomId)).get();
@@ -279,12 +283,7 @@ app.openapi(queueNextRoute, async (c) => {
 	const speakingTimeSec =
 		body.speakingTimeSec ?? phase?.featureFlags?.speakingTimeSec ?? DEFAULT_SPEAKING_TIME_SEC;
 
-	const newQueue = await advanceToNextSpeaker(
-		db,
-		livekitRoomName(roomId),
-		meta,
-		speakingTimeSec,
-	);
+	const newQueue = await advanceToNextSpeaker(db, livekitRoomName(roomId), meta, speakingTimeSec);
 
 	const updated = updateSpeakerQueue(meta, newQueue);
 	await updateRoomMetadata(livekitRoomName(roomId), serializeMetadata(updated));
@@ -346,9 +345,11 @@ app.openapi(queueSkipRoute, async (c) => {
 
 // ─── POST /api/rooms/:roomId/interrupt ───────────────────────────────────────
 
+app.use("/api/rooms/:roomId/interrupt", participantRoomAuth);
 app.openapi(interruptRequestRoute, async (c) => {
 	const { roomId } = c.req.valid("param");
-	const { participantId, displayName } = c.req.valid("json");
+	const { displayName } = c.req.valid("json");
+	const participantId = c.get("participant").id;
 
 	const db = drizzle(c.env.DB);
 	const room = await db.select().from(rooms).where(eq(rooms.id, roomId)).get();
@@ -443,8 +444,7 @@ app.openapi(interruptRequestRoute, async (c) => {
 
 	// Unmute the interrupter
 	try {
-		await setParticipantMicPermission(
-				livekitRoomName(roomId), participantId, true);
+		await setParticipantMicPermission(livekitRoomName(roomId), participantId, true);
 	} catch {
 		return c.json({ error: "Failed to unmute participant" }, 403);
 	}
@@ -482,8 +482,7 @@ app.openapi(interruptEndRoute, async (c) => {
 
 	// Mute the interrupter
 	try {
-		await setParticipantMicPermission(
-				livekitRoomName(roomId), participantId, false);
+		await setParticipantMicPermission(livekitRoomName(roomId), participantId, false);
 	} catch {
 		// ignore if participant left
 	}
@@ -526,7 +525,7 @@ app.openapi(speakingCheckRoute, async (c) => {
 			await logSpeakingEnd(db, interruption.participantId, roomId);
 			try {
 				await setParticipantMicPermission(
-				livekitRoomName(roomId),
+					livekitRoomName(roomId),
 					interruption.participantId,
 					false,
 				);
@@ -547,7 +546,7 @@ app.openapi(speakingCheckRoute, async (c) => {
 		const speakingTimeSec = phase?.featureFlags?.speakingTimeSec ?? DEFAULT_SPEAKING_TIME_SEC;
 
 		speakerQueue = await advanceToNextSpeaker(
-		db,
+			db,
 			livekitRoomName(roomId),
 			{ ...meta, speakerQueue },
 			speakingTimeSec,

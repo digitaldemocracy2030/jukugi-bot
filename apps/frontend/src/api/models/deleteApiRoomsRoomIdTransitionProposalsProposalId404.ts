@@ -6,5 +6,5 @@
  */
 
 export type DeleteApiRoomsRoomIdTransitionProposalsProposalId404 = {
-	error: string;
+  error: string;
 };

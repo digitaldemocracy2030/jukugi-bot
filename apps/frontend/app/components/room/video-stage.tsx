@@ -7,7 +7,10 @@ import { ParticipantVideoTile } from "./participant-video-tile";
 export function VideoStage({
 	metadata,
 	micAllowed = false,
-}: { metadata: RoomMetadata | null; micAllowed?: boolean }) {
+}: {
+	metadata: RoomMetadata | null;
+	micAllowed?: boolean;
+}) {
 	const { localParticipant } = useLocalParticipant();
 	const participants = useParticipants();
 	const allTracks = useTracks([{ source: Track.Source.Camera, withPlaceholder: true }], {

@@ -17,16 +17,11 @@ export const SpeakingLogSchema = z
 
 export const QueueJoinSchema = z
 	.object({
-		participantId: z.string().min(1),
 		displayName: z.string().min(1).max(100),
 	})
 	.openapi("QueueJoin");
 
-export const QueueLeaveSchema = z
-	.object({
-		participantId: z.string().min(1),
-	})
-	.openapi("QueueLeave");
+export const QueueLeaveSchema = z.object({}).openapi("QueueLeave");
 
 export const QueueNextSchema = z
 	.object({
@@ -37,7 +32,6 @@ export const QueueNextSchema = z
 
 export const InterruptRequestSchema = z
 	.object({
-		participantId: z.string().min(1),
 		displayName: z.string().min(1).max(100),
 	})
 	.openapi("InterruptRequest");
@@ -95,6 +89,7 @@ export const queueJoinRoute = createRoute({
 	path: "/api/rooms/{roomId}/queue/join",
 	tags: ["Speaking Queue"],
 	summary: "Request to speak (join queue)",
+	security: [{ ParticipantTokenAuth: [] }],
 	request: {
 		params: RoomIdParams,
 		body: { content: { "application/json": { schema: QueueJoinSchema } }, required: true },
@@ -104,13 +99,17 @@ export const queueJoinRoute = createRoute({
 			content: { "application/json": { schema: QueueResponseSchema } },
 			description: "Joined queue",
 		},
-		404: {
+		401: {
 			content: { "application/json": { schema: ErrorSchema } },
-			description: "Room not found",
+			description: "Unauthorized",
 		},
 		403: {
 			content: { "application/json": { schema: ErrorSchema } },
-			description: "Speaking not allowed",
+			description: "Speaking not allowed or not a room member",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Room not found",
 		},
 		409: {
 			content: { "application/json": { schema: ErrorSchema } },
@@ -128,6 +127,7 @@ export const queueLeaveRoute = createRoute({
 	path: "/api/rooms/{roomId}/queue/leave",
 	tags: ["Speaking Queue"],
 	summary: "Leave the speaking queue",
+	security: [{ ParticipantTokenAuth: [] }],
 	request: {
 		params: RoomIdParams,
 		body: { content: { "application/json": { schema: QueueLeaveSchema } }, required: true },
@@ -136,6 +136,14 @@ export const queueLeaveRoute = createRoute({
 		200: {
 			content: { "application/json": { schema: QueueResponseSchema } },
 			description: "Left queue",
+		},
+		401: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Unauthorized",
+		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Not a room member",
 		},
 		404: {
 			content: { "application/json": { schema: ErrorSchema } },
@@ -216,6 +224,7 @@ export const interruptRequestRoute = createRoute({
 	path: "/api/rooms/{roomId}/interrupt",
 	tags: ["Speaking Queue"],
 	summary: "Request an interruption",
+	security: [{ ParticipantTokenAuth: [] }],
 	request: {
 		params: RoomIdParams,
 		body: { content: { "application/json": { schema: InterruptRequestSchema } }, required: true },
@@ -225,13 +234,17 @@ export const interruptRequestRoute = createRoute({
 			content: { "application/json": { schema: QueueResponseSchema } },
 			description: "Interruption granted",
 		},
-		404: {
+		401: {
 			content: { "application/json": { schema: ErrorSchema } },
-			description: "Room not found",
+			description: "Unauthorized",
 		},
 		403: {
 			content: { "application/json": { schema: ErrorSchema } },
 			description: "Interruption not allowed or conditions not met",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Room not found",
 		},
 		422: {
 			content: { "application/json": { schema: ValidationErrorSchema } },

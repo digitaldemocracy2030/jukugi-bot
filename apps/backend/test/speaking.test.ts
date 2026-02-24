@@ -109,16 +109,16 @@ function setupLiveKitMocks() {
 
 /**
  * Helper: create a participant identity + session_participation in one call.
- * The session_participation.id is set to the given spId so existing test
- * assertions and speaking_log FK references keep working.
+ * Returns the participant UUID (used as X-Participant-Token).
  */
 async function createParticipantWithSession(
 	db: D1Database,
 	roomId: string,
 	spId: string,
-): Promise<void> {
+): Promise<string> {
 	const participantId = await createTestParticipant(db);
 	await createTestSessionParticipation(db, participantId, roomId, { id: spId });
+	return participantId;
 }
 
 beforeAll(() => {
@@ -142,7 +142,7 @@ describe("POST /api/rooms/:roomId/queue/join", () => {
 		const phaseId = await createTestPhase(env.DB, roomId, {
 			featureFlags: { canSpeak: true, speakingTimeSec: 60 },
 		});
-		await createParticipantWithSession(env.DB, roomId, "participant-1");
+		const token = await createParticipantWithSession(env.DB, roomId, "participant-1");
 
 		seedMetadata({
 			...buildMockRoomMetadata(roomId),
@@ -152,8 +152,11 @@ describe("POST /api/rooms/:roomId/queue/join", () => {
 
 		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/queue/join`, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ participantId: "participant-1", displayName: "Alice" }),
+			headers: {
+				"Content-Type": "application/json",
+				"X-Participant-Token": token,
+			},
+			body: JSON.stringify({ displayName: "Alice" }),
 		});
 
 		expect(response.status).toBe(200);
@@ -167,7 +170,7 @@ describe("POST /api/rooms/:roomId/queue/join", () => {
 		};
 		expect(data.success).toBe(true);
 		// Since nobody was speaking, should immediately become current speaker
-		expect(data.speakerQueue.currentSpeaker?.participantId).toBe("participant-1");
+		expect(data.speakerQueue.currentSpeaker?.participantId).toBe(token);
 		expect(data.speakerQueue.queue).toHaveLength(0);
 	});
 
@@ -176,14 +179,14 @@ describe("POST /api/rooms/:roomId/queue/join", () => {
 			slug: "queue-join-waiting-room",
 			status: "active",
 		});
-		await createParticipantWithSession(env.DB, roomId, "speaker-1");
-		await createParticipantWithSession(env.DB, roomId, "speaker-2");
+		const token1 = await createParticipantWithSession(env.DB, roomId, "speaker-1");
+		const token2 = await createParticipantWithSession(env.DB, roomId, "speaker-2");
 
 		seedMetadata({
 			...buildMockRoomMetadata(roomId),
 			featureFlags: { canSpeak: true, canInterrupt: false, canVote: false },
 			speakerQueue: {
-				currentSpeaker: { participantId: "speaker-1", speakingUntil: Date.now() + 60000 },
+				currentSpeaker: { participantId: token1, speakingUntil: Date.now() + 60000 },
 				queue: [],
 				interruptions: [],
 			},
@@ -191,8 +194,11 @@ describe("POST /api/rooms/:roomId/queue/join", () => {
 
 		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/queue/join`, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ participantId: "speaker-2", displayName: "Bob" }),
+			headers: {
+				"Content-Type": "application/json",
+				"X-Participant-Token": token2,
+			},
+			body: JSON.stringify({ displayName: "Bob" }),
 		});
 
 		expect(response.status).toBe(200);
@@ -202,28 +208,32 @@ describe("POST /api/rooms/:roomId/queue/join", () => {
 				queue: { participantId: string }[];
 			};
 		};
-		expect(data.speakerQueue.currentSpeaker?.participantId).toBe("speaker-1");
+		expect(data.speakerQueue.currentSpeaker?.participantId).toBe(token1);
 		expect(data.speakerQueue.queue).toHaveLength(1);
-		expect(data.speakerQueue.queue[0].participantId).toBe("speaker-2");
+		expect(data.speakerQueue.queue[0].participantId).toBe(token2);
 	});
 
 	it("should return 409 when already in queue", async () => {
 		const roomId = await createTestRoom(env.DB, { slug: "already-queued-room", status: "active" });
+		const token = await createParticipantWithSession(env.DB, roomId, "participant-1");
 
 		seedMetadata({
 			...buildMockRoomMetadata(roomId),
 			featureFlags: { canSpeak: true, canInterrupt: false, canVote: false },
 			speakerQueue: {
 				currentSpeaker: null,
-				queue: [{ participantId: "participant-1", displayName: "Alice", requestedAt: Date.now() }],
+				queue: [{ participantId: token, displayName: "Alice", requestedAt: Date.now() }],
 				interruptions: [],
 			},
 		});
 
 		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/queue/join`, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ participantId: "participant-1", displayName: "Alice" }),
+			headers: {
+				"Content-Type": "application/json",
+				"X-Participant-Token": token,
+			},
+			body: JSON.stringify({ displayName: "Alice" }),
 		});
 
 		expect(response.status).toBe(409);
@@ -231,6 +241,7 @@ describe("POST /api/rooms/:roomId/queue/join", () => {
 
 	it("should return 403 when speaking is not allowed in current phase", async () => {
 		const roomId = await createTestRoom(env.DB, { slug: "no-speak-room", status: "active" });
+		const token = await createParticipantWithSession(env.DB, roomId, "participant-1");
 
 		seedMetadata({
 			...buildMockRoomMetadata(roomId),
@@ -239,8 +250,11 @@ describe("POST /api/rooms/:roomId/queue/join", () => {
 
 		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/queue/join`, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ participantId: "participant-1", displayName: "Alice" }),
+			headers: {
+				"Content-Type": "application/json",
+				"X-Participant-Token": token,
+			},
+			body: JSON.stringify({ displayName: "Alice" }),
 		});
 
 		expect(response.status).toBe(403);
@@ -248,24 +262,71 @@ describe("POST /api/rooms/:roomId/queue/join", () => {
 
 	it("should return 403 when room is not active", async () => {
 		const roomId = await createTestRoom(env.DB, { slug: "inactive-queue-room", status: "draft" });
+		const token = await createParticipantWithSession(env.DB, roomId, "participant-1");
 
 		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/queue/join`, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ participantId: "participant-1", displayName: "Alice" }),
+			headers: {
+				"Content-Type": "application/json",
+				"X-Participant-Token": token,
+			},
+			body: JSON.stringify({ displayName: "Alice" }),
 		});
 
 		expect(response.status).toBe(403);
 	});
 
-	it("should return 404 when room not found", async () => {
-		const response = await SELF.fetch("http://example.com/api/rooms/nonexistent/queue/join", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ participantId: "p1", displayName: "Alice" }),
+	it("should return 401 without participant token", async () => {
+		const roomId = await createTestRoom(env.DB, { slug: "unauth-queue-room", status: "active" });
+
+		seedMetadata({
+			...buildMockRoomMetadata(roomId),
+			featureFlags: { canSpeak: true, canInterrupt: false, canVote: false },
 		});
 
-		expect(response.status).toBe(404);
+		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/queue/join`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ displayName: "Alice" }),
+		});
+
+		expect(response.status).toBe(401);
+	});
+
+	it("should return 401 with invalid participant token", async () => {
+		const roomId = await createTestRoom(env.DB, { slug: "invalid-token-room", status: "active" });
+
+		seedMetadata({
+			...buildMockRoomMetadata(roomId),
+			featureFlags: { canSpeak: true, canInterrupt: false, canVote: false },
+		});
+
+		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/queue/join`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Participant-Token": "nonexistent-token",
+			},
+			body: JSON.stringify({ displayName: "Alice" }),
+		});
+
+		expect(response.status).toBe(401);
+	});
+
+	it("should return 404 when room not found", async () => {
+		const token = await createTestParticipant(env.DB);
+
+		const response = await SELF.fetch("http://example.com/api/rooms/nonexistent/queue/join", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Participant-Token": token,
+			},
+			body: JSON.stringify({ displayName: "Alice" }),
+		});
+
+		// 403 because participant is not a member of this room (room doesn't exist in session_participations)
+		expect(response.status).toBe(403);
 	});
 });
 
@@ -278,14 +339,16 @@ describe("DELETE /api/rooms/:roomId/queue/leave", () => {
 
 	it("should remove a participant from the queue", async () => {
 		const roomId = await createTestRoom(env.DB, { slug: "queue-leave-room", status: "active" });
+		const token1 = await createParticipantWithSession(env.DB, roomId, "p1");
+		const token2 = await createParticipantWithSession(env.DB, roomId, "p2");
 
 		seedMetadata({
 			...buildMockRoomMetadata(roomId),
 			speakerQueue: {
 				currentSpeaker: null,
 				queue: [
-					{ participantId: "p1", displayName: "Alice", requestedAt: Date.now() },
-					{ participantId: "p2", displayName: "Bob", requestedAt: Date.now() },
+					{ participantId: token1, displayName: "Alice", requestedAt: Date.now() },
+					{ participantId: token2, displayName: "Bob", requestedAt: Date.now() },
 				],
 				interruptions: [],
 			},
@@ -293,8 +356,11 @@ describe("DELETE /api/rooms/:roomId/queue/leave", () => {
 
 		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/queue/leave`, {
 			method: "DELETE",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ participantId: "p1" }),
+			headers: {
+				"Content-Type": "application/json",
+				"X-Participant-Token": token1,
+			},
+			body: JSON.stringify({}),
 		});
 
 		expect(response.status).toBe(200);
@@ -302,17 +368,19 @@ describe("DELETE /api/rooms/:roomId/queue/leave", () => {
 			speakerQueue: { queue: { participantId: string }[] };
 		};
 		expect(data.speakerQueue.queue).toHaveLength(1);
-		expect(data.speakerQueue.queue[0].participantId).toBe("p2");
+		expect(data.speakerQueue.queue[0].participantId).toBe(token2);
 	});
 
-	it("should return 404 when room not found", async () => {
-		const response = await SELF.fetch("http://example.com/api/rooms/nonexistent/queue/leave", {
+	it("should return 401 without participant token", async () => {
+		const roomId = await createTestRoom(env.DB, { slug: "unauth-leave-room", status: "active" });
+
+		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/queue/leave`, {
 			method: "DELETE",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ participantId: "p1" }),
+			body: JSON.stringify({}),
 		});
 
-		expect(response.status).toBe(404);
+		expect(response.status).toBe(401);
 	});
 });
 
@@ -325,14 +393,14 @@ describe("POST /api/rooms/:roomId/queue/next", () => {
 
 	it("should advance to next speaker", async () => {
 		const roomId = await createTestRoom(env.DB, { slug: "queue-next-room", status: "active" });
-		await createParticipantWithSession(env.DB, roomId, "p1");
-		await createParticipantWithSession(env.DB, roomId, "p2");
+		const token1 = await createParticipantWithSession(env.DB, roomId, "p1");
+		const token2 = await createParticipantWithSession(env.DB, roomId, "p2");
 
 		seedMetadata({
 			...buildMockRoomMetadata(roomId),
 			speakerQueue: {
-				currentSpeaker: { participantId: "p1", speakingUntil: Date.now() + 60000 },
-				queue: [{ participantId: "p2", displayName: "Bob", requestedAt: Date.now() }],
+				currentSpeaker: { participantId: token1, speakingUntil: Date.now() + 60000 },
+				queue: [{ participantId: token2, displayName: "Bob", requestedAt: Date.now() }],
 				interruptions: [],
 			},
 		});
@@ -353,7 +421,7 @@ describe("POST /api/rooms/:roomId/queue/next", () => {
 				queue: unknown[];
 			};
 		};
-		expect(data.speakerQueue.currentSpeaker?.participantId).toBe("p2");
+		expect(data.speakerQueue.currentSpeaker?.participantId).toBe(token2);
 		expect(data.speakerQueue.queue).toHaveLength(0);
 	});
 
@@ -362,12 +430,12 @@ describe("POST /api/rooms/:roomId/queue/next", () => {
 			slug: "empty-queue-next-room",
 			status: "active",
 		});
-		await createParticipantWithSession(env.DB, roomId, "p1");
+		const token1 = await createParticipantWithSession(env.DB, roomId, "p1");
 
 		seedMetadata({
 			...buildMockRoomMetadata(roomId),
 			speakerQueue: {
-				currentSpeaker: { participantId: "p1", speakingUntil: Date.now() + 60000 },
+				currentSpeaker: { participantId: token1, speakingUntil: Date.now() + 60000 },
 				queue: [],
 				interruptions: [],
 			},
@@ -394,14 +462,14 @@ describe("POST /api/rooms/:roomId/queue/next", () => {
 			slug: "custom-time-next-room",
 			status: "active",
 		});
-		await createParticipantWithSession(env.DB, roomId, "p1");
-		await createParticipantWithSession(env.DB, roomId, "p2");
+		const token1 = await createParticipantWithSession(env.DB, roomId, "p1");
+		const token2 = await createParticipantWithSession(env.DB, roomId, "p2");
 
 		seedMetadata({
 			...buildMockRoomMetadata(roomId),
 			speakerQueue: {
-				currentSpeaker: { participantId: "p1", speakingUntil: Date.now() + 60000 },
-				queue: [{ participantId: "p2", displayName: "Bob", requestedAt: Date.now() }],
+				currentSpeaker: { participantId: token1, speakingUntil: Date.now() + 60000 },
+				queue: [{ participantId: token2, displayName: "Bob", requestedAt: Date.now() }],
 				interruptions: [],
 			},
 		});
@@ -419,7 +487,7 @@ describe("POST /api/rooms/:roomId/queue/next", () => {
 		const data = (await response.json()) as {
 			speakerQueue: { currentSpeaker: { participantId: string; speakingUntil: number } | null };
 		};
-		expect(data.speakerQueue.currentSpeaker?.participantId).toBe("p2");
+		expect(data.speakerQueue.currentSpeaker?.participantId).toBe(token2);
 		const nowApprox = Date.now();
 		const speakingUntil = data.speakerQueue.currentSpeaker?.speakingUntil ?? 0;
 		expect(speakingUntil).toBeGreaterThan(nowApprox + 25000);
@@ -463,14 +531,14 @@ describe("POST /api/rooms/:roomId/queue/skip", () => {
 
 	it("should skip current speaker and advance to next", async () => {
 		const roomId = await createTestRoom(env.DB, { slug: "queue-skip-room", status: "active" });
-		await createParticipantWithSession(env.DB, roomId, "p1");
-		await createParticipantWithSession(env.DB, roomId, "p2");
+		const token1 = await createParticipantWithSession(env.DB, roomId, "p1");
+		const token2 = await createParticipantWithSession(env.DB, roomId, "p2");
 
 		seedMetadata({
 			...buildMockRoomMetadata(roomId),
 			speakerQueue: {
-				currentSpeaker: { participantId: "p1", speakingUntil: Date.now() + 60000 },
-				queue: [{ participantId: "p2", displayName: "Bob", requestedAt: Date.now() }],
+				currentSpeaker: { participantId: token1, speakingUntil: Date.now() + 60000 },
+				queue: [{ participantId: token2, displayName: "Bob", requestedAt: Date.now() }],
 				interruptions: [],
 			},
 		});
@@ -487,7 +555,7 @@ describe("POST /api/rooms/:roomId/queue/skip", () => {
 				queue: unknown[];
 			};
 		};
-		expect(data.speakerQueue.currentSpeaker?.participantId).toBe("p2");
+		expect(data.speakerQueue.currentSpeaker?.participantId).toBe(token2);
 		expect(data.speakerQueue.queue).toHaveLength(0);
 	});
 
@@ -511,7 +579,8 @@ describe("POST /api/rooms/:roomId/interrupt", () => {
 
 	it("should grant an interruption when allowed", async () => {
 		const roomId = await createTestRoom(env.DB, { slug: "interrupt-room", status: "active" });
-		await createParticipantWithSession(env.DB, roomId, "interrupter-1");
+		const token = await createParticipantWithSession(env.DB, roomId, "interrupter-1");
+		await createParticipantWithSession(env.DB, roomId, "speaker-1");
 
 		seedMetadata({
 			...buildMockRoomMetadata(roomId),
@@ -525,8 +594,11 @@ describe("POST /api/rooms/:roomId/interrupt", () => {
 
 		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/interrupt`, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ participantId: "interrupter-1", displayName: "Interrupter" }),
+			headers: {
+				"Content-Type": "application/json",
+				"X-Participant-Token": token,
+			},
+			body: JSON.stringify({ displayName: "Interrupter" }),
 		});
 
 		expect(response.status).toBe(200);
@@ -538,12 +610,13 @@ describe("POST /api/rooms/:roomId/interrupt", () => {
 		};
 		expect(data.success).toBe(true);
 		expect(data.speakerQueue.interruptions).toHaveLength(1);
-		expect(data.speakerQueue.interruptions[0].participantId).toBe("interrupter-1");
+		expect(data.speakerQueue.interruptions[0].participantId).toBe(token);
 		expect(data.speakerQueue.interruptions[0].expiresAt).toBeGreaterThan(Date.now());
 	});
 
 	it("should return 403 when interruptions not allowed in phase", async () => {
 		const roomId = await createTestRoom(env.DB, { slug: "no-interrupt-room", status: "active" });
+		const token = await createParticipantWithSession(env.DB, roomId, "participant-1");
 
 		seedMetadata({
 			...buildMockRoomMetadata(roomId),
@@ -552,8 +625,11 @@ describe("POST /api/rooms/:roomId/interrupt", () => {
 
 		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/interrupt`, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ participantId: "p1", displayName: "Alice" }),
+			headers: {
+				"Content-Type": "application/json",
+				"X-Participant-Token": token,
+			},
+			body: JSON.stringify({ displayName: "Alice" }),
 		});
 
 		expect(response.status).toBe(403);
@@ -563,6 +639,7 @@ describe("POST /api/rooms/:roomId/interrupt", () => {
 
 	it("should return 403 when max simultaneous interruptions (2) reached", async () => {
 		const roomId = await createTestRoom(env.DB, { slug: "max-interrupt-room", status: "active" });
+		const token = await createParticipantWithSession(env.DB, roomId, "i3");
 
 		seedMetadata({
 			...buildMockRoomMetadata(roomId),
@@ -579,8 +656,11 @@ describe("POST /api/rooms/:roomId/interrupt", () => {
 
 		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/interrupt`, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ participantId: "i3", displayName: "C" }),
+			headers: {
+				"Content-Type": "application/json",
+				"X-Participant-Token": token,
+			},
+			body: JSON.stringify({ displayName: "C" }),
 		});
 
 		expect(response.status).toBe(403);
@@ -593,6 +673,7 @@ describe("POST /api/rooms/:roomId/interrupt", () => {
 			slug: "double-interrupt-room",
 			status: "active",
 		});
+		const token = await createParticipantWithSession(env.DB, roomId, "p1");
 
 		seedMetadata({
 			...buildMockRoomMetadata(roomId),
@@ -601,15 +682,18 @@ describe("POST /api/rooms/:roomId/interrupt", () => {
 				currentSpeaker: null,
 				queue: [],
 				interruptions: [
-					{ participantId: "p1", displayName: "Alice", expiresAt: Date.now() + 10000 },
+					{ participantId: token, displayName: "Alice", expiresAt: Date.now() + 10000 },
 				],
 			},
 		});
 
 		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/interrupt`, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ participantId: "p1", displayName: "Alice" }),
+			headers: {
+				"Content-Type": "application/json",
+				"X-Participant-Token": token,
+			},
+			body: JSON.stringify({ displayName: "Alice" }),
 		});
 
 		expect(response.status).toBe(403);
@@ -622,14 +706,38 @@ describe("POST /api/rooms/:roomId/interrupt", () => {
 			slug: "inactive-interrupt-room",
 			status: "draft",
 		});
+		const token = await createParticipantWithSession(env.DB, roomId, "p1");
+
+		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/interrupt`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Participant-Token": token,
+			},
+			body: JSON.stringify({ displayName: "Alice" }),
+		});
+
+		expect(response.status).toBe(403);
+	});
+
+	it("should return 401 without participant token", async () => {
+		const roomId = await createTestRoom(env.DB, {
+			slug: "unauth-interrupt-room",
+			status: "active",
+		});
+
+		seedMetadata({
+			...buildMockRoomMetadata(roomId),
+			featureFlags: { canSpeak: true, canInterrupt: true, canVote: false },
+		});
 
 		const response = await SELF.fetch(`http://example.com/api/rooms/${roomId}/interrupt`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ participantId: "p1", displayName: "Alice" }),
+			body: JSON.stringify({ displayName: "Alice" }),
 		});
 
-		expect(response.status).toBe(403);
+		expect(response.status).toBe(401);
 	});
 });
 
@@ -643,7 +751,7 @@ describe("POST /api/rooms/:roomId/interrupt/:participantId/end", () => {
 	it("should end an active interruption", async () => {
 		const roomId = await createTestRoom(env.DB, { slug: "interrupt-end-room", status: "active" });
 		const phaseId = await createTestPhase(env.DB, roomId, { type: "discussion", title: "Phase" });
-		await createParticipantWithSession(env.DB, roomId, "interrupter-1");
+		const token = await createParticipantWithSession(env.DB, roomId, "interrupter-1");
 
 		await env.DB.prepare(
 			"INSERT INTO speaking_log (id, room_id, phase_id, participant_id, type, started_at) VALUES (?, ?, ?, ?, ?, ?)",
@@ -665,13 +773,13 @@ describe("POST /api/rooms/:roomId/interrupt/:participantId/end", () => {
 				currentSpeaker: null,
 				queue: [],
 				interruptions: [
-					{ participantId: "interrupter-1", displayName: "Alice", expiresAt: Date.now() + 10000 },
+					{ participantId: token, displayName: "Alice", expiresAt: Date.now() + 10000 },
 				],
 			},
 		});
 
 		const response = await SELF.fetch(
-			`http://example.com/api/rooms/${roomId}/interrupt/interrupter-1/end`,
+			`http://example.com/api/rooms/${roomId}/interrupt/${token}/end`,
 			{
 				method: "POST",
 				headers: { "X-Admin-Key": ADMIN_KEY },
@@ -758,8 +866,8 @@ describe("POST /api/rooms/:roomId/speaking/check", () => {
 			slug: "speaking-check-expire-room",
 			status: "active",
 		});
-		await createParticipantWithSession(env.DB, roomId, "expired-speaker");
-		await createParticipantWithSession(env.DB, roomId, "next-speaker");
+		const token1 = await createParticipantWithSession(env.DB, roomId, "expired-speaker");
+		const token2 = await createParticipantWithSession(env.DB, roomId, "next-speaker");
 
 		const phaseId = await createTestPhase(env.DB, roomId, {
 			type: "discussion",
@@ -783,10 +891,8 @@ describe("POST /api/rooms/:roomId/speaking/check", () => {
 			...buildMockRoomMetadata(roomId),
 			currentPhaseId: phaseId,
 			speakerQueue: {
-				currentSpeaker: { participantId: "expired-speaker", speakingUntil: Date.now() - 5000 },
-				queue: [
-					{ participantId: "next-speaker", displayName: "Next", requestedAt: Date.now() - 10000 },
-				],
+				currentSpeaker: { participantId: token1, speakingUntil: Date.now() - 5000 },
+				queue: [{ participantId: token2, displayName: "Next", requestedAt: Date.now() - 10000 }],
 				interruptions: [],
 			},
 		});
@@ -802,7 +908,7 @@ describe("POST /api/rooms/:roomId/speaking/check", () => {
 				queue: unknown[];
 			};
 		};
-		expect(data.speakerQueue.currentSpeaker?.participantId).toBe("next-speaker");
+		expect(data.speakerQueue.currentSpeaker?.participantId).toBe(token2);
 		expect(data.speakerQueue.queue).toHaveLength(0);
 	});
 
@@ -812,7 +918,7 @@ describe("POST /api/rooms/:roomId/speaking/check", () => {
 			status: "active",
 		});
 		const phaseId = await createTestPhase(env.DB, roomId, { type: "discussion", title: "Phase" });
-		await createParticipantWithSession(env.DB, roomId, "exp-interrupter");
+		const token = await createParticipantWithSession(env.DB, roomId, "exp-interrupter");
 
 		await env.DB.prepare(
 			"INSERT INTO speaking_log (id, room_id, phase_id, participant_id, type, started_at) VALUES (?, ?, ?, ?, ?, ?)",
@@ -832,9 +938,7 @@ describe("POST /api/rooms/:roomId/speaking/check", () => {
 			speakerQueue: {
 				currentSpeaker: null,
 				queue: [],
-				interruptions: [
-					{ participantId: "exp-interrupter", displayName: "Exp", expiresAt: Date.now() - 1000 },
-				],
+				interruptions: [{ participantId: token, displayName: "Exp", expiresAt: Date.now() - 1000 }],
 			},
 		});
 

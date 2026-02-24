@@ -6,5 +6,5 @@
  */
 
 export interface DiscussionPhaseConfig {
-	topic?: string;
+  topic?: string;
 }

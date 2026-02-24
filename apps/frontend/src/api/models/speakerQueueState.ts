@@ -4,13 +4,13 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { SpeakerQueueStateCurrentSpeaker } from "./speakerQueueStateCurrentSpeaker";
-import type { SpeakerQueueStateInterruptionsItem } from "./speakerQueueStateInterruptionsItem";
-import type { SpeakerQueueStateQueueItem } from "./speakerQueueStateQueueItem";
+import type { SpeakerQueueStateCurrentSpeaker } from './speakerQueueStateCurrentSpeaker';
+import type { SpeakerQueueStateInterruptionsItem } from './speakerQueueStateInterruptionsItem';
+import type { SpeakerQueueStateQueueItem } from './speakerQueueStateQueueItem';
 
 export interface SpeakerQueueState {
-	/** @nullable */
-	currentSpeaker: SpeakerQueueStateCurrentSpeaker;
-	queue: SpeakerQueueStateQueueItem[];
-	interruptions: SpeakerQueueStateInterruptionsItem[];
+  /** @nullable */
+  currentSpeaker: SpeakerQueueStateCurrentSpeaker;
+  queue: SpeakerQueueStateQueueItem[];
+  interruptions: SpeakerQueueStateInterruptionsItem[];
 }

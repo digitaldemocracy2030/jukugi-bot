@@ -92,11 +92,11 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 
 	const handleQueueToggle = () => {
 		if (isInQueue) {
-			leaveQueueMutation.mutate({ roomId, data: { participantId: myId } });
+			leaveQueueMutation.mutate({ roomId, data: {} });
 		} else {
 			joinQueueMutation.mutate({
 				roomId,
-				data: { participantId: myId, displayName: myDisplayName },
+				data: { displayName: myDisplayName },
 			});
 		}
 	};
@@ -104,7 +104,7 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 	const handleInterrupt = () => {
 		interruptMutation.mutate({
 			roomId,
-			data: { participantId: myId, displayName: myDisplayName },
+			data: { displayName: myDisplayName },
 		});
 	};
 

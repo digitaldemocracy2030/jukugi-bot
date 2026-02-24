@@ -4,19 +4,19 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { CreateSurveyPhaseType } from "./createSurveyPhaseType";
-import type { SurveyPhaseConfig } from "./surveyPhaseConfig";
-import type { SurveyPhaseFeatureFlags } from "./surveyPhaseFeatureFlags";
+import type { CreateSurveyPhaseType } from './createSurveyPhaseType';
+import type { SurveyPhaseConfig } from './surveyPhaseConfig';
+import type { SurveyPhaseFeatureFlags } from './surveyPhaseFeatureFlags';
 
 export interface CreateSurveyPhase {
-	type: CreateSurveyPhaseType;
-	/**
-	 * @minLength 1
-	 * @maxLength 200
-	 */
-	title: string;
-	/** @minimum 0 */
-	sortOrder?: number;
-	config?: SurveyPhaseConfig;
-	featureFlags?: SurveyPhaseFeatureFlags;
+  type: CreateSurveyPhaseType;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  title: string;
+  /** @minimum 0 */
+  sortOrder?: number;
+  config?: SurveyPhaseConfig;
+  featureFlags?: SurveyPhaseFeatureFlags;
 }

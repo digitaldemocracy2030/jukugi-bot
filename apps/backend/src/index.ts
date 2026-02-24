@@ -69,6 +69,14 @@ app.openAPIRegistry.registerComponent("securitySchemes", "AdminKeyAuth", {
 	description: "Admin API key (ADMIN_API_KEY env var)",
 });
 
+// Register X-Participant-Token security scheme
+app.openAPIRegistry.registerComponent("securitySchemes", "ParticipantTokenAuth", {
+	type: "apiKey",
+	in: "header",
+	name: "X-Participant-Token",
+	description: "Participant identity token (participant UUID)",
+});
+
 // OpenAPI JSON エンドポイント
 app.doc("/api/openapi.json", {
 	openapi: "3.0.0",

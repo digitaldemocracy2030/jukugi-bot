@@ -6,5 +6,5 @@
  */
 
 export type PostApiRoomsRoomIdQueueSkip401 = {
-	error: string;
+  error: string;
 };

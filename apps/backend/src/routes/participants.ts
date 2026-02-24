@@ -2,6 +2,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { participants } from "../db/schema";
+import { type ParticipantVariables, participantAuth } from "../middleware/participant-auth";
 import {
 	createParticipantRoute,
 	getParticipantMeRoute,
@@ -12,7 +13,7 @@ type Bindings = {
 	DB: D1Database;
 };
 
-const app = new OpenAPIHono<{ Bindings: Bindings }>();
+const app = new OpenAPIHono<{ Bindings: Bindings; Variables: ParticipantVariables }>();
 
 /** Generate a recovery code in "XXX-XXX" format using uppercase alphanumeric characters */
 function generateRecoveryCode(): string {
@@ -47,19 +48,9 @@ app.openapi(createParticipantRoute, async (c) => {
 
 // ─── GET /api/participants/me ──────────────────────────────────────────────────
 
+app.use("/api/participants/me", participantAuth);
 app.openapi(getParticipantMeRoute, async (c) => {
-	const db = drizzle(c.env.DB);
-	const token = c.req.header("x-participant-token");
-
-	if (!token) {
-		return c.json({ error: "Missing X-Participant-Token header" }, 401);
-	}
-
-	const participant = await db.select().from(participants).where(eq(participants.id, token)).get();
-
-	if (!participant) {
-		return c.json({ error: "Participant not found" }, 401);
-	}
+	const participant = c.get("participant");
 
 	return c.json(
 		{

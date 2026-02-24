@@ -18,6 +18,11 @@ import {
 import { updateRoomMetadata } from "../livekit/room-service";
 import { adminAuth } from "../middleware/admin-auth";
 import {
+	type ParticipantRoomVariables,
+	participantOrAdminAuth,
+	participantRoomAuth,
+} from "../middleware/participant-auth";
+import {
 	CastTransitionVoteSchema,
 	CreateTransitionProposalSchema,
 	TransitionProposalResponseSchema,
@@ -29,7 +34,7 @@ type Bindings = {
 	ENVIRONMENT: string;
 };
 
-const app = new OpenAPIHono<{ Bindings: Bindings }>();
+const app = new OpenAPIHono<{ Bindings: Bindings; Variables: ParticipantRoomVariables }>();
 
 function livekitRoomName(roomId: string): string {
 	return `room-${roomId}`;
@@ -117,6 +122,7 @@ const castVoteRoute = createRoute({
 	path: "/api/rooms/{roomId}/transition-proposals/{proposalId}/votes",
 	tags: ["Transition"],
 	summary: "Cast a vote on a transition proposal",
+	security: [{ ParticipantTokenAuth: [] }],
 	request: {
 		params: ProposalParams,
 		body: {
@@ -128,6 +134,14 @@ const castVoteRoute = createRoute({
 		200: {
 			content: { "application/json": { schema: TransitionProposalResponseSchema } },
 			description: "Vote cast",
+		},
+		401: {
+			content: { "application/json": { schema: z.object({ error: z.string() }) } },
+			description: "Unauthorized",
+		},
+		403: {
+			content: { "application/json": { schema: z.object({ error: z.string() }) } },
+			description: "Not a room member",
 		},
 		404: {
 			content: { "application/json": { schema: z.object({ error: z.string() }) } },
@@ -175,6 +189,7 @@ const rejectProposalRoute = createRoute({
 
 // ─── Handlers ────────────────────────────────────────────────────────────────
 
+app.use("/api/rooms/:roomId/transition-proposals", participantOrAdminAuth);
 app.openapi(createProposalRoute, async (c) => {
 	const db = drizzle(c.env.DB);
 	const { roomId } = c.req.valid("param");
@@ -183,10 +198,7 @@ app.openapi(createProposalRoute, async (c) => {
 	const adminKey = c.req.header("X-Admin-Key");
 	const isAdmin = !!adminKey && adminKey === c.env.ADMIN_API_KEY;
 	const role = isAdmin ? ("admin" as const) : ("participant" as const);
-
-	if (!isAdmin && !body.participantId) {
-		return c.json({ error: "participantId is required for participants" }, 400);
-	}
+	const participantId = isAdmin ? "admin" : c.get("participant").id;
 
 	const room = await db.select().from(rooms).where(eq(rooms.id, roomId)).get();
 	if (!room) {
@@ -253,7 +265,7 @@ app.openapi(createProposalRoute, async (c) => {
 		roomId,
 		fromPhaseId: activation.phaseId,
 		toPhaseId: body.toPhaseId ?? null,
-		proposedBy: isAdmin ? "admin" : body.participantId,
+		proposedBy: participantId,
 		proposedByRole: role,
 		status: "open",
 		requiredThreshold: threshold,
@@ -348,10 +360,12 @@ app.openapi(getActiveProposalRoute, async (c) => {
 	);
 });
 
+app.use("/api/rooms/:roomId/transition-proposals/:proposalId/votes", participantRoomAuth);
 app.openapi(castVoteRoute, async (c) => {
 	const db = drizzle(c.env.DB);
 	const { roomId, proposalId } = c.req.valid("param");
 	const body = c.req.valid("json");
+	const participantId = c.get("participant").id;
 
 	const room = await db.select().from(rooms).where(eq(rooms.id, roomId)).get();
 	if (!room) {
@@ -377,7 +391,7 @@ app.openapi(castVoteRoute, async (c) => {
 		.where(
 			and(
 				eq(phaseTransitionVotes.proposalId, proposalId),
-				eq(phaseTransitionVotes.participantId, body.participantId),
+				eq(phaseTransitionVotes.participantId, participantId),
 			),
 		)
 		.get();
@@ -389,7 +403,7 @@ app.openapi(castVoteRoute, async (c) => {
 	await db.insert(phaseTransitionVotes).values({
 		id: crypto.randomUUID(),
 		proposalId,
-		participantId: body.participantId,
+		participantId,
 		choice: body.choice,
 		createdAt: now,
 	});

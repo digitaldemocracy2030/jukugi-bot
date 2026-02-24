@@ -6,5 +6,5 @@
  */
 
 export type DeleteApiRoomsRoomIdTransitionProposalsProposalId200 = {
-	success: boolean;
+  success: boolean;
 };

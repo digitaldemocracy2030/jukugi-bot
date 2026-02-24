@@ -6,7 +6,5 @@
  */
 
 export type PostApiRoomsRoomIdTransitionProposalsBody = {
-	/** @minLength 1 */
-	participantId: string;
 	toPhaseId?: string;
 };

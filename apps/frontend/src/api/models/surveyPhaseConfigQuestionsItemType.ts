@@ -5,11 +5,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type SurveyPhaseConfigQuestionsItemType =
-	(typeof SurveyPhaseConfigQuestionsItemType)[keyof typeof SurveyPhaseConfigQuestionsItemType];
+export type SurveyPhaseConfigQuestionsItemType = typeof SurveyPhaseConfigQuestionsItemType[keyof typeof SurveyPhaseConfigQuestionsItemType];
+
 
 export const SurveyPhaseConfigQuestionsItemType = {
-	text: "text",
-	scale: "scale",
-	choice: "choice",
+  text: 'text',
+  scale: 'scale',
+  choice: 'choice',
 } as const;

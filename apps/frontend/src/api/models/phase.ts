@@ -4,9 +4,9 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { DiscussionPhase } from "./discussionPhase";
-import type { SurveyPhase } from "./surveyPhase";
-import type { VideoPhase } from "./videoPhase";
-import type { VotingPhase } from "./votingPhase";
+import type { DiscussionPhase } from './discussionPhase';
+import type { SurveyPhase } from './surveyPhase';
+import type { VideoPhase } from './videoPhase';
+import type { VotingPhase } from './votingPhase';
 
 export type Phase = VideoPhase | DiscussionPhase | VotingPhase | SurveyPhase;

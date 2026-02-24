@@ -6,5 +6,5 @@
  */
 
 export type DeleteApiRoomsRoomIdQueueLeave404 = {
-	error: string;
+  error: string;
 };

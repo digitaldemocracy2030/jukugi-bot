@@ -6,5 +6,5 @@
  */
 
 export type PostApiRoomsRoomIdTranscripts404 = {
-	error: string;
+  error: string;
 };

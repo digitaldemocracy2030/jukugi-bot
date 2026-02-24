@@ -5,6 +5,7 @@ import {
 	createTestParticipant,
 	createTestPhase,
 	createTestRoom,
+	createTestSessionParticipation,
 } from "./helpers/database";
 
 const ADMIN_KEY = "test-admin-key";
@@ -66,6 +67,21 @@ async function createTestProposal(
 	return id;
 }
 
+/**
+ * Helper: create a participant + session_participation and return the participant UUID (token).
+ */
+async function createParticipantWithSession(
+	db: D1Database,
+	roomId: string,
+	overrides: { displayName?: string } = {},
+): Promise<string> {
+	const participantId = await createTestParticipant(db, {
+		displayName: overrides.displayName ?? "Test Participant",
+	});
+	await createTestSessionParticipation(db, participantId, roomId);
+	return participantId;
+}
+
 beforeAll(() => {
 	fetchMock.activate();
 	fetchMock.disableNetConnect();
@@ -97,7 +113,7 @@ describe("POST /api/rooms/:roomId/transition-proposals", () => {
 					"Content-Type": "application/json",
 					"X-Admin-Key": ADMIN_KEY,
 				},
-				body: JSON.stringify({ participantId: "admin" }),
+				body: JSON.stringify({}),
 			},
 		);
 
@@ -123,7 +139,7 @@ describe("POST /api/rooms/:roomId/transition-proposals", () => {
 			featureFlags: { participantCanProposeTransition: true },
 		});
 		await createTestPhaseActivation(env.DB, roomId, phaseId);
-		const participantId = await createTestParticipant(env.DB, {
+		const token = await createParticipantWithSession(env.DB, roomId, {
 			displayName: "Alice",
 		});
 
@@ -131,8 +147,11 @@ describe("POST /api/rooms/:roomId/transition-proposals", () => {
 			`http://example.com/api/rooms/${roomId}/transition-proposals`,
 			{
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ participantId }),
+				headers: {
+					"Content-Type": "application/json",
+					"X-Participant-Token": token,
+				},
+				body: JSON.stringify({}),
 			},
 		);
 
@@ -150,7 +169,7 @@ describe("POST /api/rooms/:roomId/transition-proposals", () => {
 			featureFlags: { participantCanProposeTransition: false },
 		});
 		await createTestPhaseActivation(env.DB, roomId, phaseId);
-		const participantId = await createTestParticipant(env.DB, {
+		const token = await createParticipantWithSession(env.DB, roomId, {
 			displayName: "Bob",
 		});
 
@@ -158,8 +177,11 @@ describe("POST /api/rooms/:roomId/transition-proposals", () => {
 			`http://example.com/api/rooms/${roomId}/transition-proposals`,
 			{
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ participantId }),
+				headers: {
+					"Content-Type": "application/json",
+					"X-Participant-Token": token,
+				},
+				body: JSON.stringify({}),
 			},
 		);
 
@@ -187,7 +209,7 @@ describe("POST /api/rooms/:roomId/transition-proposals", () => {
 					"Content-Type": "application/json",
 					"X-Admin-Key": ADMIN_KEY,
 				},
-				body: JSON.stringify({ participantId: "admin" }),
+				body: JSON.stringify({}),
 			},
 		);
 
@@ -218,7 +240,7 @@ describe("POST /api/rooms/:roomId/transition-proposals", () => {
 					"Content-Type": "application/json",
 					"X-Admin-Key": ADMIN_KEY,
 				},
-				body: JSON.stringify({ participantId: "admin" }),
+				body: JSON.stringify({}),
 			},
 		);
 
@@ -244,7 +266,7 @@ describe("POST /api/rooms/:roomId/transition-proposals", () => {
 					"Content-Type": "application/json",
 					"X-Admin-Key": ADMIN_KEY,
 				},
-				body: JSON.stringify({ participantId: "admin" }),
+				body: JSON.stringify({}),
 			},
 		);
 
@@ -260,11 +282,29 @@ describe("POST /api/rooms/:roomId/transition-proposals", () => {
 					"Content-Type": "application/json",
 					"X-Admin-Key": ADMIN_KEY,
 				},
-				body: JSON.stringify({ participantId: "admin" }),
+				body: JSON.stringify({}),
 			},
 		);
 
 		expect(response.status).toBe(404);
+	});
+
+	it("should return 401 without any auth header", async () => {
+		const roomId = await createTestRoom(env.DB, {
+			slug: "unauth-propose",
+			status: "active",
+		});
+
+		const response = await SELF.fetch(
+			`http://example.com/api/rooms/${roomId}/transition-proposals`,
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({}),
+			},
+		);
+
+		expect(response.status).toBe(401);
 	});
 });
 
@@ -329,7 +369,7 @@ describe("POST /api/rooms/:roomId/transition-proposals/:proposalId/votes", () =>
 		});
 		await createTestPhaseActivation(env.DB, roomId, phaseId);
 		const proposalId = await createTestProposal(env.DB, roomId, phaseId);
-		const participantId = await createTestParticipant(env.DB, {
+		const token = await createParticipantWithSession(env.DB, roomId, {
 			displayName: "Voter1",
 		});
 
@@ -337,8 +377,11 @@ describe("POST /api/rooms/:roomId/transition-proposals/:proposalId/votes", () =>
 			`http://example.com/api/rooms/${roomId}/transition-proposals/${proposalId}/votes`,
 			{
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ participantId, choice: "yes" }),
+				headers: {
+					"Content-Type": "application/json",
+					"X-Participant-Token": token,
+				},
+				body: JSON.stringify({ choice: "yes" }),
 			},
 		);
 
@@ -358,7 +401,7 @@ describe("POST /api/rooms/:roomId/transition-proposals/:proposalId/votes", () =>
 		});
 		await createTestPhaseActivation(env.DB, roomId, phaseId);
 		const proposalId = await createTestProposal(env.DB, roomId, phaseId);
-		const participantId = await createTestParticipant(env.DB, {
+		const token = await createParticipantWithSession(env.DB, roomId, {
 			displayName: "Voter2",
 		});
 
@@ -366,8 +409,11 @@ describe("POST /api/rooms/:roomId/transition-proposals/:proposalId/votes", () =>
 			`http://example.com/api/rooms/${roomId}/transition-proposals/${proposalId}/votes`,
 			{
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ participantId, choice: "no" }),
+				headers: {
+					"Content-Type": "application/json",
+					"X-Participant-Token": token,
+				},
+				body: JSON.stringify({ choice: "no" }),
 			},
 		);
 
@@ -387,7 +433,7 @@ describe("POST /api/rooms/:roomId/transition-proposals/:proposalId/votes", () =>
 		});
 		await createTestPhaseActivation(env.DB, roomId, phaseId);
 		const proposalId = await createTestProposal(env.DB, roomId, phaseId);
-		const participantId = await createTestParticipant(env.DB, {
+		const token = await createParticipantWithSession(env.DB, roomId, {
 			displayName: "DupVoter",
 		});
 
@@ -396,8 +442,11 @@ describe("POST /api/rooms/:roomId/transition-proposals/:proposalId/votes", () =>
 			`http://example.com/api/rooms/${roomId}/transition-proposals/${proposalId}/votes`,
 			{
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ participantId, choice: "yes" }),
+				headers: {
+					"Content-Type": "application/json",
+					"X-Participant-Token": token,
+				},
+				body: JSON.stringify({ choice: "yes" }),
 			},
 		);
 
@@ -406,8 +455,11 @@ describe("POST /api/rooms/:roomId/transition-proposals/:proposalId/votes", () =>
 			`http://example.com/api/rooms/${roomId}/transition-proposals/${proposalId}/votes`,
 			{
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ participantId, choice: "no" }),
+				headers: {
+					"Content-Type": "application/json",
+					"X-Participant-Token": token,
+				},
+				body: JSON.stringify({ choice: "no" }),
 			},
 		);
 
@@ -427,7 +479,7 @@ describe("POST /api/rooms/:roomId/transition-proposals/:proposalId/votes", () =>
 		const proposalId = await createTestProposal(env.DB, roomId, phaseId, {
 			status: "approved",
 		});
-		const participantId = await createTestParticipant(env.DB, {
+		const token = await createParticipantWithSession(env.DB, roomId, {
 			displayName: "LateVoter",
 		});
 
@@ -435,8 +487,11 @@ describe("POST /api/rooms/:roomId/transition-proposals/:proposalId/votes", () =>
 			`http://example.com/api/rooms/${roomId}/transition-proposals/${proposalId}/votes`,
 			{
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ participantId, choice: "yes" }),
+				headers: {
+					"Content-Type": "application/json",
+					"X-Participant-Token": token,
+				},
+				body: JSON.stringify({ choice: "yes" }),
 			},
 		);
 
@@ -456,7 +511,7 @@ describe("POST /api/rooms/:roomId/transition-proposals/:proposalId/votes", () =>
 		const proposalId = await createTestProposal(env.DB, roomId, phaseId, {
 			threshold: 1.0,
 		});
-		const participantId = await createTestParticipant(env.DB, {
+		const token = await createParticipantWithSession(env.DB, roomId, {
 			displayName: "ApproveVoter",
 		});
 
@@ -464,14 +519,41 @@ describe("POST /api/rooms/:roomId/transition-proposals/:proposalId/votes", () =>
 			`http://example.com/api/rooms/${roomId}/transition-proposals/${proposalId}/votes`,
 			{
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ participantId, choice: "yes" }),
+				headers: {
+					"Content-Type": "application/json",
+					"X-Participant-Token": token,
+				},
+				body: JSON.stringify({ choice: "yes" }),
 			},
 		);
 
 		expect(response.status).toBe(200);
 		const data = (await response.json()) as { status: string };
 		expect(data.status).toBe("approved");
+	});
+
+	it("should return 401 without participant token", async () => {
+		const roomId = await createTestRoom(env.DB, {
+			slug: "unauth-vote",
+			status: "active",
+		});
+		const phaseId = await createTestPhase(env.DB, roomId, {
+			type: "discussion",
+			title: "Discussion",
+		});
+		await createTestPhaseActivation(env.DB, roomId, phaseId);
+		const proposalId = await createTestProposal(env.DB, roomId, phaseId);
+
+		const response = await SELF.fetch(
+			`http://example.com/api/rooms/${roomId}/transition-proposals/${proposalId}/votes`,
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ choice: "yes" }),
+			},
+		);
+
+		expect(response.status).toBe(401);
 	});
 });
 

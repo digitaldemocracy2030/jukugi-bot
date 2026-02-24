@@ -12,7 +12,7 @@ export function AdminHeader() {
 
 	return (
 		<header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-			<div className="w-full max-w-[1400px] mx-auto px-6 flex items-center justify-between h-14">
+			<div className="w-full max-w-6xl mx-auto px-8 lg:px-12 flex items-center justify-between h-14">
 				<Stack direction="horizontal" align="center" gap={6}>
 					<Link to="/admin" className="flex items-center gap-2">
 						<div className="size-8 rounded-lg bg-primary flex items-center justify-center">

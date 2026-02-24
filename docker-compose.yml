@@ -82,8 +82,6 @@ services:
           address: redis:6379
         keys:
           devkey: secret
-        agent:
-          enabled: true
         webhook:
           urls:
             - http://backend:8787/api/webhooks/livekit

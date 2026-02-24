@@ -17,9 +17,12 @@ STORAGE_SECRET_KEY=${STORAGE_SECRET_KEY:-}
 STORAGE_PUBLIC_URL=${STORAGE_PUBLIC_URL:-}
 EOF
 
-# Set LIVEKIT_URL in wrangler.toml from environment
+# Set vars in wrangler.toml from environment
 if [ -n "${LIVEKIT_URL:-}" ]; then
   sed -i "s|^LIVEKIT_URL = .*|LIVEKIT_URL = \"${LIVEKIT_URL}\"|" /app/apps/backend/wrangler.toml
+fi
+if [ -n "${TRANSCRIPTION_AGENT_NAME:-}" ]; then
+  sed -i "s|^TRANSCRIPTION_AGENT_NAME = .*|TRANSCRIPTION_AGENT_NAME = \"${TRANSCRIPTION_AGENT_NAME}\"|" /app/apps/backend/wrangler.toml
 fi
 
 sleep 1

@@ -6,7 +6,7 @@
  */
 
 export type GetApiRoomsRoomIdTranscriptsParams = {
-phaseId?: string;
-participantId?: string;
-finalOnly?: string;
+	phaseId?: string;
+	participantId?: string;
+	finalOnly?: string;
 };

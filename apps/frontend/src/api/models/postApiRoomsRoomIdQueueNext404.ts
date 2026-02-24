@@ -6,5 +6,5 @@
  */
 
 export type PostApiRoomsRoomIdQueueNext404 = {
-  error: string;
+	error: string;
 };

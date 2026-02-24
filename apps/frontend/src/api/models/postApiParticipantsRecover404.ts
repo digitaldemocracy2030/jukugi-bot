@@ -6,5 +6,5 @@
  */
 
 export type PostApiParticipantsRecover404 = {
-  error: string;
+	error: string;
 };

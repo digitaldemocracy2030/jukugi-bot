@@ -6,7 +6,7 @@
  */
 
 export type SpeakerQueueStateQueueItem = {
-  participantId: string;
-  displayName: string;
-  requestedAt: number;
+	participantId: string;
+	displayName: string;
+	requestedAt: number;
 };

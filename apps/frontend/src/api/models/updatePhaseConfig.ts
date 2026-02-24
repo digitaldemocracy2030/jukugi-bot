@@ -5,4 +5,4 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type UpdatePhaseConfig = {[key: string]: unknown | null};
+export type UpdatePhaseConfig = { [key: string]: unknown | null };

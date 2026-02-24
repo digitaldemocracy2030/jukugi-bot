@@ -4,21 +4,21 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { PostApiRoomsRoomIdTransitionProposals201ProposedByRole } from './postApiRoomsRoomIdTransitionProposals201ProposedByRole';
-import type { PostApiRoomsRoomIdTransitionProposals201Status } from './postApiRoomsRoomIdTransitionProposals201Status';
+import type { PostApiRoomsRoomIdTransitionProposals201ProposedByRole } from "./postApiRoomsRoomIdTransitionProposals201ProposedByRole";
+import type { PostApiRoomsRoomIdTransitionProposals201Status } from "./postApiRoomsRoomIdTransitionProposals201Status";
 
 export type PostApiRoomsRoomIdTransitionProposals201 = {
-  id: string;
-  fromPhaseId: string;
-  /** @nullable */
-  toPhaseId: string | null;
-  proposedByRole: PostApiRoomsRoomIdTransitionProposals201ProposedByRole;
-  status: PostApiRoomsRoomIdTransitionProposals201Status;
-  yesCount: number;
-  noCount: number;
-  totalVoted: number;
-  requiredThreshold: number;
-  /** @nullable */
-  expiresAt: string | null;
-  createdAt: string;
+	id: string;
+	fromPhaseId: string;
+	/** @nullable */
+	toPhaseId: string | null;
+	proposedByRole: PostApiRoomsRoomIdTransitionProposals201ProposedByRole;
+	status: PostApiRoomsRoomIdTransitionProposals201Status;
+	yesCount: number;
+	noCount: number;
+	totalVoted: number;
+	requiredThreshold: number;
+	/** @nullable */
+	expiresAt: string | null;
+	createdAt: string;
 };

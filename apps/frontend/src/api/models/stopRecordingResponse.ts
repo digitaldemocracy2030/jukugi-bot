@@ -6,6 +6,6 @@
  */
 
 export interface StopRecordingResponse {
-  success: boolean;
-  recordingId: string;
+	success: boolean;
+	recordingId: string;
 }

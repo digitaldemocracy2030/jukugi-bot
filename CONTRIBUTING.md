@@ -111,8 +111,7 @@ cd jukugi-bot
 pnpm install
 
 # 環境変数の設定
-cp apps/backend/.dev.vars.example apps/backend/.dev.vars
-# .dev.vars を編集して必要な値を設定する
+cp .env.example .env
 
 # ローカル開発サーバーの起動 (Docker 推奨)
 docker-compose up

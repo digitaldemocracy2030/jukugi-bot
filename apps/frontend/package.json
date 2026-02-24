@@ -10,6 +10,8 @@
 		"generate:api": "orval --config ./orval.config.ts"
 	},
 	"dependencies": {
+		"@fontsource/geist-mono": "^5.2.7",
+		"@hugeicons/react": "^1.1.5",
 		"@livekit/components-react": "^2.9.20",
 		"@livekit/components-styles": "^1.2.0",
 		"@react-router/node": "7.12.0",

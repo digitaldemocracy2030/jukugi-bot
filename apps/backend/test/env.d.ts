@@ -6,5 +6,9 @@ declare module "cloudflare:test" {
 		LIVEKIT_API_KEY: string;
 		LIVEKIT_API_SECRET: string;
 		RECORDINGS_BUCKET: R2Bucket;
+		OPENAI_API_KEY: string;
+		AI_MODEL_LARGE: string;
+		AI_MODEL_MEDIUM: string;
+		AI_MODEL_SMALL: string;
 	}
 }

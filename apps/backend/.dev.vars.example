@@ -1,8 +1,17 @@
 # Local development environment variables
+# Copy this file to .dev.vars and fill in your values.
+# In production, set these as Cloudflare Dashboard secrets.
+
 ENVIRONMENT=development
+
+# Admin API
 ADMIN_API_KEY=your-admin-api-key-here
+
+# LiveKit
+LIVEKIT_URL=http://localhost:7880
 LIVEKIT_API_KEY=your-livekit-api-key
 LIVEKIT_API_SECRET=your-livekit-api-secret
+LIVEKIT_WEBHOOK_SECRET=
 
 # Cloudflare R2 — LiveKit Egress S3 credentials (recording disabled if STORAGE_ENDPOINT is absent)
 # The R2 bucket itself is managed via [[r2_buckets]] binding in wrangler.toml.
@@ -12,8 +21,11 @@ STORAGE_ACCESS_KEY=your-r2-access-key
 STORAGE_SECRET_KEY=your-r2-secret-key
 STORAGE_PUBLIC_URL=https://recordings.example.com
 
-# LiveKit webhook signature (falls back to LIVEKIT_API_SECRET if omitted)
-LIVEKIT_WEBHOOK_SECRET=
-
 # Transcription agent name — dispatch disabled if absent
 TRANSCRIPTION_AGENT_NAME=transcription-agent
+
+# LLM Summary — summary feature disabled if OPENAI_API_KEY is absent
+# OPENAI_API_KEY=your-openai-api-key
+# AI_MODEL_LARGE=gpt-4o
+# AI_MODEL_MEDIUM=gpt-4o-mini
+# AI_MODEL_SMALL=gpt-4o-mini

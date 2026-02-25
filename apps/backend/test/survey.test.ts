@@ -62,7 +62,7 @@ describe("Survey API", () => {
 				},
 			);
 			expect(res.status).toBe(201);
-			const data = await res.json();
+			const data = (await res.json()) as { id: string; answers: unknown[] };
 			expect(data).toHaveProperty("id");
 			expect(data.answers).toHaveLength(3);
 		});
@@ -76,17 +76,14 @@ describe("Survey API", () => {
 				],
 			});
 
-			await SELF.fetch(
-				`http://localhost/api/rooms/${roomId}/phases/${phaseId}/survey-responses`,
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						"X-Participant-Token": participantToken,
-					},
-					body,
+			await SELF.fetch(`http://localhost/api/rooms/${roomId}/phases/${phaseId}/survey-responses`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"X-Participant-Token": participantToken,
 				},
-			);
+				body,
+			});
 
 			const res = await SELF.fetch(
 				`http://localhost/api/rooms/${roomId}/phases/${phaseId}/survey-responses`,
@@ -189,7 +186,7 @@ describe("Survey API", () => {
 				`http://localhost/api/rooms/${roomId}/phases/${phaseId}/survey-responses/summary`,
 			);
 			expect(res.status).toBe(200);
-			const data = await res.json();
+			const data = (await res.json()) as { totalResponses: number };
 			expect(data.totalResponses).toBe(0);
 		});
 
@@ -198,23 +195,20 @@ describe("Survey API", () => {
 			const p2 = await createParticipantWithSession(env.DB, roomId, { displayName: "P2" });
 
 			const body = (token: string) =>
-				SELF.fetch(
-					`http://localhost/api/rooms/${roomId}/phases/${phaseId}/survey-responses`,
-					{
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							"X-Participant-Token": token,
-						},
-						body: JSON.stringify({
-							answers: [
-								{ questionId: "q1", value: "回答" },
-								{ questionId: "q2", value: 4 },
-								{ questionId: "q3", value: "環境" },
-							],
-						}),
+				SELF.fetch(`http://localhost/api/rooms/${roomId}/phases/${phaseId}/survey-responses`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"X-Participant-Token": token,
 					},
-				);
+					body: JSON.stringify({
+						answers: [
+							{ questionId: "q1", value: "回答" },
+							{ questionId: "q2", value: 4 },
+							{ questionId: "q3", value: "環境" },
+						],
+					}),
+				});
 
 			await body(p1);
 			await body(p2);
@@ -223,7 +217,7 @@ describe("Survey API", () => {
 				`http://localhost/api/rooms/${roomId}/phases/${phaseId}/survey-responses/summary`,
 			);
 			expect(res.status).toBe(200);
-			const data = await res.json();
+			const data = (await res.json()) as { totalResponses: number };
 			expect(data.totalResponses).toBe(2);
 		});
 	});

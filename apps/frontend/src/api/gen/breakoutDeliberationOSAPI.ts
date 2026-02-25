@@ -4,7 +4,7 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
 	DataTag,
 	DefinedInitialDataOptions,
@@ -19,10 +19,7 @@ import type {
 	UseQueryOptions,
 	UseQueryResult,
 } from "@tanstack/react-query";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import type { BodyType, ErrorType } from "../custom-fetch";
 
-import { customFetch } from "../custom-fetch";
 import type {
 	ActivateRoomResponse,
 	CreateParticipant,
@@ -44,10 +41,14 @@ import type {
 	DeleteApiRoomsRoomIdTransitionProposalsProposalId200,
 	DeleteApiRoomsRoomIdTransitionProposalsProposalId401,
 	DeleteApiRoomsRoomIdTransitionProposalsProposalId404,
+	DiscussionSummary,
+	GenerateSkipped,
 	GetApiParticipantsMe401,
 	GetApiRooms401,
 	GetApiRoomsParams,
 	GetApiRoomsRoomIdPhases404,
+	GetApiRoomsRoomIdPhasesPhaseIdSummariesLatest404,
+	GetApiRoomsRoomIdPhasesPhaseIdSummariesLatest422,
 	GetApiRoomsRoomIdPhasesPhaseIdSurveyResponsesSummary404,
 	GetApiRoomsRoomIdPhasesPhaseIdVotesResults404,
 	GetApiRoomsRoomIdRecordings401,
@@ -63,6 +64,7 @@ import type {
 	InterruptRequest,
 	JoinRoom,
 	JoinRoomResponse,
+	LatestSummaryResponse,
 	ParticipantResponse,
 	PatchApiRoomsRoomId401,
 	PatchApiRoomsRoomId404,
@@ -92,19 +94,22 @@ import type {
 	PostApiRoomsRoomIdJoin403,
 	PostApiRoomsRoomIdJoin404,
 	PostApiRoomsRoomIdJoin422,
+	PostApiRoomsRoomIdPhaseTransition401,
+	PostApiRoomsRoomIdPhaseTransition403,
+	PostApiRoomsRoomIdPhaseTransition404,
+	PostApiRoomsRoomIdPhaseTransition422,
 	PostApiRoomsRoomIdPhases401,
 	PostApiRoomsRoomIdPhases404,
 	PostApiRoomsRoomIdPhases422,
+	PostApiRoomsRoomIdPhasesPhaseIdSummariesGenerate401,
+	PostApiRoomsRoomIdPhasesPhaseIdSummariesGenerate404,
+	PostApiRoomsRoomIdPhasesPhaseIdSummariesGenerate422,
 	PostApiRoomsRoomIdPhasesPhaseIdSurveyResponses400,
 	PostApiRoomsRoomIdPhasesPhaseIdSurveyResponses404,
 	PostApiRoomsRoomIdPhasesPhaseIdSurveyResponses409,
 	PostApiRoomsRoomIdPhasesPhaseIdVotes400,
 	PostApiRoomsRoomIdPhasesPhaseIdVotes404,
 	PostApiRoomsRoomIdPhasesPhaseIdVotes409,
-	PostApiRoomsRoomIdPhaseTransition401,
-	PostApiRoomsRoomIdPhaseTransition403,
-	PostApiRoomsRoomIdPhaseTransition404,
-	PostApiRoomsRoomIdPhaseTransition422,
 	PostApiRoomsRoomIdQueueJoin401,
 	PostApiRoomsRoomIdQueueJoin403,
 	PostApiRoomsRoomIdQueueJoin404,
@@ -169,6 +174,8 @@ import type {
 	VotingResults,
 } from "../models";
 
+import { customFetch } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
@@ -5446,6 +5453,380 @@ export function useGetApiRoomsRoomIdPhasesPhaseIdSurveyResponsesSummary<
 	queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 	const queryOptions = getGetApiRoomsRoomIdPhasesPhaseIdSurveyResponsesSummaryQueryOptions(
+		roomId,
+		phaseId,
+		options,
+	);
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Trigger summary generation for a discussion phase
+ */
+export type postApiRoomsRoomIdPhasesPhaseIdSummariesGenerateResponse200 = {
+	data: GenerateSkipped;
+	status: 200;
+};
+
+export type postApiRoomsRoomIdPhasesPhaseIdSummariesGenerateResponse201 = {
+	data: DiscussionSummary;
+	status: 201;
+};
+
+export type postApiRoomsRoomIdPhasesPhaseIdSummariesGenerateResponse401 = {
+	data: PostApiRoomsRoomIdPhasesPhaseIdSummariesGenerate401;
+	status: 401;
+};
+
+export type postApiRoomsRoomIdPhasesPhaseIdSummariesGenerateResponse404 = {
+	data: PostApiRoomsRoomIdPhasesPhaseIdSummariesGenerate404;
+	status: 404;
+};
+
+export type postApiRoomsRoomIdPhasesPhaseIdSummariesGenerateResponse422 = {
+	data: PostApiRoomsRoomIdPhasesPhaseIdSummariesGenerate422;
+	status: 422;
+};
+
+export type postApiRoomsRoomIdPhasesPhaseIdSummariesGenerateResponseSuccess = (
+	| postApiRoomsRoomIdPhasesPhaseIdSummariesGenerateResponse200
+	| postApiRoomsRoomIdPhasesPhaseIdSummariesGenerateResponse201
+) & {
+	headers: Headers;
+};
+export type postApiRoomsRoomIdPhasesPhaseIdSummariesGenerateResponseError = (
+	| postApiRoomsRoomIdPhasesPhaseIdSummariesGenerateResponse401
+	| postApiRoomsRoomIdPhasesPhaseIdSummariesGenerateResponse404
+	| postApiRoomsRoomIdPhasesPhaseIdSummariesGenerateResponse422
+) & {
+	headers: Headers;
+};
+
+export type postApiRoomsRoomIdPhasesPhaseIdSummariesGenerateResponse =
+	| postApiRoomsRoomIdPhasesPhaseIdSummariesGenerateResponseSuccess
+	| postApiRoomsRoomIdPhasesPhaseIdSummariesGenerateResponseError;
+
+export const getPostApiRoomsRoomIdPhasesPhaseIdSummariesGenerateUrl = (
+	roomId: string,
+	phaseId: string,
+) => {
+	return `/api/rooms/${roomId}/phases/${phaseId}/summaries/generate`;
+};
+
+export const postApiRoomsRoomIdPhasesPhaseIdSummariesGenerate = async (
+	roomId: string,
+	phaseId: string,
+	options?: RequestInit,
+): Promise<postApiRoomsRoomIdPhasesPhaseIdSummariesGenerateResponse> => {
+	return customFetch<postApiRoomsRoomIdPhasesPhaseIdSummariesGenerateResponse>(
+		getPostApiRoomsRoomIdPhasesPhaseIdSummariesGenerateUrl(roomId, phaseId),
+		{
+			...options,
+			method: "POST",
+		},
+	);
+};
+
+export const getPostApiRoomsRoomIdPhasesPhaseIdSummariesGenerateMutationOptions = <
+	TError = ErrorType<
+		| PostApiRoomsRoomIdPhasesPhaseIdSummariesGenerate401
+		| PostApiRoomsRoomIdPhasesPhaseIdSummariesGenerate404
+		| PostApiRoomsRoomIdPhasesPhaseIdSummariesGenerate422
+	>,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof postApiRoomsRoomIdPhasesPhaseIdSummariesGenerate>>,
+		TError,
+		{ roomId: string; phaseId: string },
+		TContext
+	>;
+	request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof postApiRoomsRoomIdPhasesPhaseIdSummariesGenerate>>,
+	TError,
+	{ roomId: string; phaseId: string },
+	TContext
+> => {
+	const mutationKey = ["postApiRoomsRoomIdPhasesPhaseIdSummariesGenerate"];
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof postApiRoomsRoomIdPhasesPhaseIdSummariesGenerate>>,
+		{ roomId: string; phaseId: string }
+	> = (props) => {
+		const { roomId, phaseId } = props ?? {};
+
+		return postApiRoomsRoomIdPhasesPhaseIdSummariesGenerate(roomId, phaseId, requestOptions);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiRoomsRoomIdPhasesPhaseIdSummariesGenerateMutationResult = NonNullable<
+	Awaited<ReturnType<typeof postApiRoomsRoomIdPhasesPhaseIdSummariesGenerate>>
+>;
+
+export type PostApiRoomsRoomIdPhasesPhaseIdSummariesGenerateMutationError = ErrorType<
+	| PostApiRoomsRoomIdPhasesPhaseIdSummariesGenerate401
+	| PostApiRoomsRoomIdPhasesPhaseIdSummariesGenerate404
+	| PostApiRoomsRoomIdPhasesPhaseIdSummariesGenerate422
+>;
+
+/**
+ * @summary Trigger summary generation for a discussion phase
+ */
+export const usePostApiRoomsRoomIdPhasesPhaseIdSummariesGenerate = <
+	TError = ErrorType<
+		| PostApiRoomsRoomIdPhasesPhaseIdSummariesGenerate401
+		| PostApiRoomsRoomIdPhasesPhaseIdSummariesGenerate404
+		| PostApiRoomsRoomIdPhasesPhaseIdSummariesGenerate422
+	>,
+	TContext = unknown,
+>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof postApiRoomsRoomIdPhasesPhaseIdSummariesGenerate>>,
+			TError,
+			{ roomId: string; phaseId: string },
+			TContext
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof postApiRoomsRoomIdPhasesPhaseIdSummariesGenerate>>,
+	TError,
+	{ roomId: string; phaseId: string },
+	TContext
+> => {
+	return useMutation(
+		getPostApiRoomsRoomIdPhasesPhaseIdSummariesGenerateMutationOptions(options),
+		queryClient,
+	);
+};
+
+/**
+ * @summary Get the latest discussion summary
+ */
+export type getApiRoomsRoomIdPhasesPhaseIdSummariesLatestResponse200 = {
+	data: LatestSummaryResponse;
+	status: 200;
+};
+
+export type getApiRoomsRoomIdPhasesPhaseIdSummariesLatestResponse404 = {
+	data: GetApiRoomsRoomIdPhasesPhaseIdSummariesLatest404;
+	status: 404;
+};
+
+export type getApiRoomsRoomIdPhasesPhaseIdSummariesLatestResponse422 = {
+	data: GetApiRoomsRoomIdPhasesPhaseIdSummariesLatest422;
+	status: 422;
+};
+
+export type getApiRoomsRoomIdPhasesPhaseIdSummariesLatestResponseSuccess =
+	getApiRoomsRoomIdPhasesPhaseIdSummariesLatestResponse200 & {
+		headers: Headers;
+	};
+export type getApiRoomsRoomIdPhasesPhaseIdSummariesLatestResponseError = (
+	| getApiRoomsRoomIdPhasesPhaseIdSummariesLatestResponse404
+	| getApiRoomsRoomIdPhasesPhaseIdSummariesLatestResponse422
+) & {
+	headers: Headers;
+};
+
+export type getApiRoomsRoomIdPhasesPhaseIdSummariesLatestResponse =
+	| getApiRoomsRoomIdPhasesPhaseIdSummariesLatestResponseSuccess
+	| getApiRoomsRoomIdPhasesPhaseIdSummariesLatestResponseError;
+
+export const getGetApiRoomsRoomIdPhasesPhaseIdSummariesLatestUrl = (
+	roomId: string,
+	phaseId: string,
+) => {
+	return `/api/rooms/${roomId}/phases/${phaseId}/summaries/latest`;
+};
+
+export const getApiRoomsRoomIdPhasesPhaseIdSummariesLatest = async (
+	roomId: string,
+	phaseId: string,
+	options?: RequestInit,
+): Promise<getApiRoomsRoomIdPhasesPhaseIdSummariesLatestResponse> => {
+	return customFetch<getApiRoomsRoomIdPhasesPhaseIdSummariesLatestResponse>(
+		getGetApiRoomsRoomIdPhasesPhaseIdSummariesLatestUrl(roomId, phaseId),
+		{
+			...options,
+			method: "GET",
+		},
+	);
+};
+
+export const getGetApiRoomsRoomIdPhasesPhaseIdSummariesLatestQueryKey = (
+	roomId: string,
+	phaseId: string,
+) => {
+	return [`/api/rooms/${roomId}/phases/${phaseId}/summaries/latest`] as const;
+};
+
+export const getGetApiRoomsRoomIdPhasesPhaseIdSummariesLatestQueryOptions = <
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdPhasesPhaseIdSummariesLatest>>,
+	TError = ErrorType<
+		| GetApiRoomsRoomIdPhasesPhaseIdSummariesLatest404
+		| GetApiRoomsRoomIdPhasesPhaseIdSummariesLatest422
+	>,
+>(
+	roomId: string,
+	phaseId: string,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getApiRoomsRoomIdPhasesPhaseIdSummariesLatest>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ??
+		getGetApiRoomsRoomIdPhasesPhaseIdSummariesLatestQueryKey(roomId, phaseId);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof getApiRoomsRoomIdPhasesPhaseIdSummariesLatest>>
+	> = ({ signal }) =>
+		getApiRoomsRoomIdPhasesPhaseIdSummariesLatest(roomId, phaseId, { signal, ...requestOptions });
+
+	return { queryKey, queryFn, enabled: !!(roomId && phaseId), ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getApiRoomsRoomIdPhasesPhaseIdSummariesLatest>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetApiRoomsRoomIdPhasesPhaseIdSummariesLatestQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getApiRoomsRoomIdPhasesPhaseIdSummariesLatest>>
+>;
+export type GetApiRoomsRoomIdPhasesPhaseIdSummariesLatestQueryError = ErrorType<
+	| GetApiRoomsRoomIdPhasesPhaseIdSummariesLatest404
+	| GetApiRoomsRoomIdPhasesPhaseIdSummariesLatest422
+>;
+
+export function useGetApiRoomsRoomIdPhasesPhaseIdSummariesLatest<
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdPhasesPhaseIdSummariesLatest>>,
+	TError = ErrorType<
+		| GetApiRoomsRoomIdPhasesPhaseIdSummariesLatest404
+		| GetApiRoomsRoomIdPhasesPhaseIdSummariesLatest422
+	>,
+>(
+	roomId: string,
+	phaseId: string,
+	options: {
+		query: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getApiRoomsRoomIdPhasesPhaseIdSummariesLatest>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getApiRoomsRoomIdPhasesPhaseIdSummariesLatest>>,
+					TError,
+					Awaited<ReturnType<typeof getApiRoomsRoomIdPhasesPhaseIdSummariesLatest>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiRoomsRoomIdPhasesPhaseIdSummariesLatest<
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdPhasesPhaseIdSummariesLatest>>,
+	TError = ErrorType<
+		| GetApiRoomsRoomIdPhasesPhaseIdSummariesLatest404
+		| GetApiRoomsRoomIdPhasesPhaseIdSummariesLatest422
+	>,
+>(
+	roomId: string,
+	phaseId: string,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getApiRoomsRoomIdPhasesPhaseIdSummariesLatest>>,
+				TError,
+				TData
+			>
+		> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getApiRoomsRoomIdPhasesPhaseIdSummariesLatest>>,
+					TError,
+					Awaited<ReturnType<typeof getApiRoomsRoomIdPhasesPhaseIdSummariesLatest>>
+				>,
+				"initialData"
+			>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetApiRoomsRoomIdPhasesPhaseIdSummariesLatest<
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdPhasesPhaseIdSummariesLatest>>,
+	TError = ErrorType<
+		| GetApiRoomsRoomIdPhasesPhaseIdSummariesLatest404
+		| GetApiRoomsRoomIdPhasesPhaseIdSummariesLatest422
+	>,
+>(
+	roomId: string,
+	phaseId: string,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getApiRoomsRoomIdPhasesPhaseIdSummariesLatest>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+/**
+ * @summary Get the latest discussion summary
+ */
+
+export function useGetApiRoomsRoomIdPhasesPhaseIdSummariesLatest<
+	TData = Awaited<ReturnType<typeof getApiRoomsRoomIdPhasesPhaseIdSummariesLatest>>,
+	TError = ErrorType<
+		| GetApiRoomsRoomIdPhasesPhaseIdSummariesLatest404
+		| GetApiRoomsRoomIdPhasesPhaseIdSummariesLatest422
+	>,
+>(
+	roomId: string,
+	phaseId: string,
+	options?: {
+		query?: Partial<
+			UseQueryOptions<
+				Awaited<ReturnType<typeof getApiRoomsRoomIdPhasesPhaseIdSummariesLatest>>,
+				TError,
+				TData
+			>
+		>;
+		request?: SecondParameter<typeof customFetch>;
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+	const queryOptions = getGetApiRoomsRoomIdPhasesPhaseIdSummariesLatestQueryOptions(
 		roomId,
 		phaseId,
 		options,

@@ -2,6 +2,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { rooms, transcripts } from "../db/schema";
+import { isAiConfigured } from "../lib/ai";
 import { generateId } from "../lib/id";
 import { adminAuth } from "../middleware/admin-auth";
 import { createTranscriptRoute, listTranscriptsRoute } from "../schemas/transcription.schema";
@@ -9,6 +10,7 @@ import { createTranscriptRoute, listTranscriptsRoute } from "../schemas/transcri
 type Bindings = {
 	DB: D1Database;
 	ADMIN_API_KEY: string;
+	SUMMARY_QUEUE?: Queue<{ roomId: string; phaseId: string }>;
 };
 
 const app = new OpenAPIHono<{ Bindings: Bindings }>();
@@ -56,6 +58,11 @@ app.openapi(createTranscriptRoute, async (c) => {
 		endOffsetMs: body.endOffsetMs ?? null,
 		createdAt: new Date(),
 	});
+
+	// Enqueue summary generation if configured
+	if (body.isFinal && body.phaseId && isAiConfigured() && c.env.SUMMARY_QUEUE) {
+		c.executionCtx.waitUntil(c.env.SUMMARY_QUEUE.send({ roomId, phaseId: body.phaseId }));
+	}
 
 	return c.json({ transcriptId }, 201);
 });

@@ -8,8 +8,6 @@ import {
 	createTestSessionParticipation,
 } from "./helpers/database";
 
-const ADMIN_KEY = "test-admin-key";
-
 async function createParticipantWithSession(
 	db: D1Database,
 	roomId: string,
@@ -41,19 +39,20 @@ describe("Voting API", () => {
 
 	describe("POST /api/rooms/:roomId/phases/:phaseId/votes", () => {
 		it("should submit a vote successfully", async () => {
-			const res = await SELF.fetch(
-				`http://localhost/api/rooms/${roomId}/phases/${phaseId}/votes`,
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						"X-Participant-Token": participantToken,
-					},
-					body: JSON.stringify({ selectedOption: "赤" }),
+			const res = await SELF.fetch(`http://localhost/api/rooms/${roomId}/phases/${phaseId}/votes`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"X-Participant-Token": participantToken,
 				},
-			);
+				body: JSON.stringify({ selectedOption: "赤" }),
+			});
 			expect(res.status).toBe(201);
-			const data = await res.json();
+			const data = (await res.json()) as {
+				id: string;
+				selectedOption: string;
+				participantId: string;
+			};
 			expect(data).toHaveProperty("id");
 			expect(data.selectedOption).toBe("赤");
 			expect(data.participantId).toBe(participantToken);
@@ -61,57 +60,45 @@ describe("Voting API", () => {
 
 		it("should return 409 for duplicate vote", async () => {
 			// First vote
-			await SELF.fetch(
-				`http://localhost/api/rooms/${roomId}/phases/${phaseId}/votes`,
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						"X-Participant-Token": participantToken,
-					},
-					body: JSON.stringify({ selectedOption: "赤" }),
+			await SELF.fetch(`http://localhost/api/rooms/${roomId}/phases/${phaseId}/votes`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"X-Participant-Token": participantToken,
 				},
-			);
+				body: JSON.stringify({ selectedOption: "赤" }),
+			});
 
 			// Duplicate vote
-			const res = await SELF.fetch(
-				`http://localhost/api/rooms/${roomId}/phases/${phaseId}/votes`,
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						"X-Participant-Token": participantToken,
-					},
-					body: JSON.stringify({ selectedOption: "青" }),
+			const res = await SELF.fetch(`http://localhost/api/rooms/${roomId}/phases/${phaseId}/votes`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"X-Participant-Token": participantToken,
 				},
-			);
+				body: JSON.stringify({ selectedOption: "青" }),
+			});
 			expect(res.status).toBe(409);
 		});
 
 		it("should return 400 for invalid option", async () => {
-			const res = await SELF.fetch(
-				`http://localhost/api/rooms/${roomId}/phases/${phaseId}/votes`,
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						"X-Participant-Token": participantToken,
-					},
-					body: JSON.stringify({ selectedOption: "黄" }),
+			const res = await SELF.fetch(`http://localhost/api/rooms/${roomId}/phases/${phaseId}/votes`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"X-Participant-Token": participantToken,
 				},
-			);
+				body: JSON.stringify({ selectedOption: "黄" }),
+			});
 			expect(res.status).toBe(400);
 		});
 
 		it("should return 401 without participant token", async () => {
-			const res = await SELF.fetch(
-				`http://localhost/api/rooms/${roomId}/phases/${phaseId}/votes`,
-				{
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ selectedOption: "赤" }),
-				},
-			);
+			const res = await SELF.fetch(`http://localhost/api/rooms/${roomId}/phases/${phaseId}/votes`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ selectedOption: "赤" }),
+			});
 			expect(res.status).toBe(401);
 		});
 
@@ -141,7 +128,7 @@ describe("Voting API", () => {
 				`http://localhost/api/rooms/${roomId}/phases/${phaseId}/votes/results`,
 			);
 			expect(res.status).toBe(200);
-			const data = await res.json();
+			const data = (await res.json()) as { totalVotes: number; results: Record<string, number> };
 			expect(data.totalVotes).toBe(0);
 			expect(data.results).toEqual({ 赤: 0, 青: 0, 緑: 0 });
 		});
@@ -162,24 +149,21 @@ describe("Voting API", () => {
 				[p2, "赤"],
 				[p3, "青"],
 			] as const) {
-				await SELF.fetch(
-					`http://localhost/api/rooms/${roomId}/phases/${phaseId}/votes`,
-					{
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							"X-Participant-Token": token,
-						},
-						body: JSON.stringify({ selectedOption: option }),
+				await SELF.fetch(`http://localhost/api/rooms/${roomId}/phases/${phaseId}/votes`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"X-Participant-Token": token,
 					},
-				);
+					body: JSON.stringify({ selectedOption: option }),
+				});
 			}
 
 			const res = await SELF.fetch(
 				`http://localhost/api/rooms/${roomId}/phases/${phaseId}/votes/results`,
 			);
 			expect(res.status).toBe(200);
-			const data = await res.json();
+			const data = (await res.json()) as { totalVotes: number; results: Record<string, number> };
 			expect(data.totalVotes).toBe(3);
 			expect(data.results.赤).toBe(2);
 			expect(data.results.青).toBe(1);

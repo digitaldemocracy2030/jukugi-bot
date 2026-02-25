@@ -219,3 +219,29 @@ export const surveyResponses = sqliteTable(
 		uniqueIndex("survey_responses_phase_participant_uniq").on(table.phaseId, table.participantId),
 	],
 );
+
+/** Discussion summaries — one summary per room+phase, overwritten on each update */
+export const discussionSummaries = sqliteTable(
+	"discussion_summaries",
+	{
+		id: text("id").primaryKey(),
+		roomId: text("room_id")
+			.notNull()
+			.references(() => rooms.id, { onDelete: "cascade" }),
+		phaseId: text("phase_id")
+			.notNull()
+			.references(() => phases.id, { onDelete: "cascade" }),
+		content: text("content").notNull(),
+		model: text("model").notNull(),
+		promptTokens: integer("prompt_tokens"),
+		completionTokens: integer("completion_tokens"),
+		transcriptCount: integer("transcript_count").notNull().default(0),
+		createdAt: integer("created_at", { mode: "timestamp" })
+			.$defaultFn(() => new Date())
+			.notNull(),
+		updatedAt: integer("updated_at", { mode: "timestamp" })
+			.$defaultFn(() => new Date())
+			.notNull(),
+	},
+	(table) => [uniqueIndex("discussion_summaries_room_phase_uniq").on(table.roomId, table.phaseId)],
+);

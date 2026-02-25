@@ -73,7 +73,7 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 	const interruptMutation = usePostApiRoomsRoomIdInterrupt();
 	const endInterruptionMutation = usePostApiRoomsRoomIdInterruptParticipantIdEnd();
 
-	const transcriptionEntries = useTranscription();
+	const transcriptionEntries = useTranscription(roomId);
 	const [interruptDialogOpen, setInterruptDialogOpen] = useState(false);
 
 	const participantMeta = (() => {

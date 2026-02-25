@@ -1,7 +1,7 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { rooms, transcripts } from "../db/schema";
+import { participants, phaseActivations, rooms, sessionParticipations, transcripts } from "../db/schema";
 import { isAiConfigured } from "../lib/ai";
 import { generateId } from "../lib/id";
 import { adminAuth } from "../middleware/admin-auth";
@@ -15,11 +15,15 @@ type Bindings = {
 
 const app = new OpenAPIHono<{ Bindings: Bindings }>();
 
-function formatTranscript(t: typeof transcripts.$inferSelect) {
+function formatTranscript(
+	t: typeof transcripts.$inferSelect,
+	extra?: { participantIdentity?: string | null; displayName?: string | null },
+) {
 	return {
 		id: t.id,
 		roomId: t.roomId,
-		participantId: t.participantId ?? null,
+		participantId: extra?.participantIdentity ?? t.participantId ?? null,
+		displayName: extra?.displayName ?? null,
 		phaseId: t.phaseId ?? null,
 		content: t.content,
 		language: t.language,
@@ -33,7 +37,15 @@ function formatTranscript(t: typeof transcripts.$inferSelect) {
 
 // ─── POST /api/rooms/:roomId/transcripts (admin / Agent) ─────────────────────
 
-app.use("/api/rooms/:roomId/transcripts", adminAuth);
+app.use("/api/rooms/:roomId/transcripts", async (c, next) => {
+	if (c.req.method !== "POST") return next();
+	const key = c.req.header("X-Admin-Key");
+	if (!key || key !== c.env.ADMIN_API_KEY) {
+		return c.json({ error: "Unauthorized" }, 401);
+	}
+	return next();
+});
+
 app.openapi(createTranscriptRoute, async (c) => {
 	const db = drizzle(c.env.DB);
 	const { roomId } = c.req.valid("param");
@@ -44,12 +56,55 @@ app.openapi(createTranscriptRoute, async (c) => {
 		return c.json({ error: "Room not found" }, 404);
 	}
 
+	// Resolve participantId: agent sends participants.id (LiveKit identity),
+	// but transcripts.participantId references sessionParticipations.id
+	let sessionParticipationId: string | null = null;
+	if (body.participantId) {
+		const sp = await db
+			.select({ id: sessionParticipations.id })
+			.from(sessionParticipations)
+			.where(
+				and(
+					eq(sessionParticipations.participantId, body.participantId),
+					eq(sessionParticipations.roomId, roomId),
+				),
+			)
+			.get();
+		sessionParticipationId = sp?.id ?? null;
+		if (!sessionParticipationId) {
+			console.warn(`[transcription] Could not resolve sessionParticipation for participant=${body.participantId}, room=${roomId}`);
+		}
+	}
+
+	// Resolve phaseId: if not provided, use the current active phase
+	let resolvedPhaseId = body.phaseId ?? null;
+	if (!resolvedPhaseId) {
+		const activePhase = await db
+			.select({ phaseId: phaseActivations.phaseId })
+			.from(phaseActivations)
+			.where(
+				and(
+					eq(phaseActivations.roomId, roomId),
+					isNull(phaseActivations.endedAt),
+				),
+			)
+			.get();
+		resolvedPhaseId = activePhase?.phaseId ?? null;
+	}
+
+	console.log("[transcription] Resolved:", JSON.stringify({
+		sessionParticipationId,
+		resolvedPhaseId,
+		isFinal: body.isFinal,
+		contentLength: body.content.length,
+	}));
+
 	const transcriptId = generateId();
 	await db.insert(transcripts).values({
 		id: transcriptId,
 		roomId,
-		participantId: body.participantId ?? null,
-		phaseId: body.phaseId ?? null,
+		participantId: sessionParticipationId,
+		phaseId: resolvedPhaseId,
 		content: body.content,
 		language: body.language,
 		confidence: body.confidence ?? null,
@@ -60,14 +115,22 @@ app.openapi(createTranscriptRoute, async (c) => {
 	});
 
 	// Enqueue summary generation if configured
-	if (body.isFinal && body.phaseId && isAiConfigured() && c.env.SUMMARY_QUEUE) {
-		c.executionCtx.waitUntil(c.env.SUMMARY_QUEUE.send({ roomId, phaseId: body.phaseId }));
+	if (body.isFinal && resolvedPhaseId && isAiConfigured() && c.env.SUMMARY_QUEUE) {
+		console.log("[transcription] Enqueueing summary generation for phase:", resolvedPhaseId);
+		c.executionCtx.waitUntil(c.env.SUMMARY_QUEUE.send({ roomId, phaseId: resolvedPhaseId }));
+	} else {
+		console.log("[transcription] Summary queue skip:", JSON.stringify({
+			isFinal: body.isFinal,
+			hasPhaseId: !!resolvedPhaseId,
+			aiConfigured: isAiConfigured(),
+			queueAvailable: !!c.env.SUMMARY_QUEUE,
+		}));
 	}
 
 	return c.json({ transcriptId }, 201);
 });
 
-// ─── GET /api/rooms/:roomId/transcripts (admin) ───────────────────────────────
+// ─── GET /api/rooms/:roomId/transcripts (public) ────────────────────────────
 
 app.openapi(listTranscriptsRoute, async (c) => {
 	const db = drizzle(c.env.DB);
@@ -92,12 +155,23 @@ app.openapi(listTranscriptsRoute, async (c) => {
 	}
 
 	const rows = await db
-		.select()
+		.select({
+			transcript: transcripts,
+			participantIdentity: sessionParticipations.participantId,
+			displayName: participants.displayName,
+		})
 		.from(transcripts)
+		.leftJoin(sessionParticipations, eq(transcripts.participantId, sessionParticipations.id))
+		.leftJoin(participants, eq(sessionParticipations.participantId, participants.id))
 		.where(and(...conditions))
 		.all();
 
-	return c.json({ transcripts: rows.map(formatTranscript) }, 200);
+	return c.json({
+		transcripts: rows.map((r) => formatTranscript(r.transcript, {
+			participantIdentity: r.participantIdentity,
+			displayName: r.displayName,
+		})),
+	}, 200);
 });
 
 export default app;

@@ -4,8 +4,8 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { Recording } from "./recording";
+import type { Recording } from './recording';
 
 export interface RecordingListResponse {
-	recordings: Recording[];
+  recordings: Recording[];
 }

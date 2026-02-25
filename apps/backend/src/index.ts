@@ -108,18 +108,22 @@ export default {
 		batch: MessageBatch<{ roomId: string; phaseId: string }>,
 		env: Bindings,
 	): Promise<void> {
+		console.log(`[summary-queue] Received batch of ${batch.messages.length} message(s)`);
 		for (const msg of batch.messages) {
 			const { roomId, phaseId } = msg.body;
+			console.log(`[summary-queue] Processing message: roomId=${roomId}, phaseId=${phaseId}`);
 			if (!phaseId || !env.OPENAI_API_KEY) {
+				console.log(`[summary-queue] Skipping: phaseId=${phaseId}, hasOpenAIKey=${!!env.OPENAI_API_KEY}`);
 				msg.ack();
 				continue;
 			}
 			try {
 				initAi(env);
-				await generateAndSaveSummary(env.DB, roomId, phaseId);
+				const result = await generateAndSaveSummary(env.DB, roomId, phaseId);
+				console.log(`[summary-queue] Summary generation result: ${result}`);
 				msg.ack();
 			} catch (err) {
-				console.error("Summary generation failed:", err);
+				console.error("[summary-queue] Summary generation failed:", err);
 				msg.retry();
 			}
 		}

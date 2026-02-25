@@ -6,9 +6,9 @@
  */
 
 export interface InterruptRequest {
-	/**
-	 * @minLength 1
-	 * @maxLength 100
-	 */
-	displayName: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  displayName: string;
 }

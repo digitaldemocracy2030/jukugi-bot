@@ -190,6 +190,11 @@ Each phase type (`video` / `discussion` / `voting` / `survey`) has strict per-ty
 ### Database (Drizzle / D1)
 - **Never create migration files manually.** Always use `pnpm --filter backend db:generate` to
   generate migrations from schema changes. Hand-written SQL migrations must not be committed.
+- **D1 data is not accessible from the host in Docker.** The backend `.wrangler` directory is
+  mounted as a Docker volume (`backend_wrangler`), so querying
+  `apps/backend/.wrangler/.../*.sqlite` directly on the host with `sqlite3` will show no data.
+  To inspect data during debugging, use the API (e.g., `GET /api/rooms/:roomId/transcripts`) or
+  run queries from inside the container via `docker exec my-app-backend`.
 
 ### Backend API
 - **All new endpoints must use `@hono/zod-openapi`.** Never add plain Hono routes without OpenAPI

@@ -4,21 +4,21 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { GetApiRoomsRoomIdTransitionProposalsActive200ProposedByRole } from "./getApiRoomsRoomIdTransitionProposalsActive200ProposedByRole";
-import type { GetApiRoomsRoomIdTransitionProposalsActive200Status } from "./getApiRoomsRoomIdTransitionProposalsActive200Status";
+import type { GetApiRoomsRoomIdTransitionProposalsActive200ProposedByRole } from './getApiRoomsRoomIdTransitionProposalsActive200ProposedByRole';
+import type { GetApiRoomsRoomIdTransitionProposalsActive200Status } from './getApiRoomsRoomIdTransitionProposalsActive200Status';
 
 export type GetApiRoomsRoomIdTransitionProposalsActive200 = {
-	id: string;
-	fromPhaseId: string;
-	/** @nullable */
-	toPhaseId: string | null;
-	proposedByRole: GetApiRoomsRoomIdTransitionProposalsActive200ProposedByRole;
-	status: GetApiRoomsRoomIdTransitionProposalsActive200Status;
-	yesCount: number;
-	noCount: number;
-	totalVoted: number;
-	requiredThreshold: number;
-	/** @nullable */
-	expiresAt: string | null;
-	createdAt: string;
+  id: string;
+  fromPhaseId: string;
+  /** @nullable */
+  toPhaseId: string | null;
+  proposedByRole: GetApiRoomsRoomIdTransitionProposalsActive200ProposedByRole;
+  status: GetApiRoomsRoomIdTransitionProposalsActive200Status;
+  yesCount: number;
+  noCount: number;
+  totalVoted: number;
+  requiredThreshold: number;
+  /** @nullable */
+  expiresAt: string | null;
+  createdAt: string;
 };

@@ -6,6 +6,6 @@
  */
 
 export type GetApiRoomsRoomIdPhasesPhaseIdSummariesLatest422 = {
-	error: string;
-	details?: unknown | null;
+  error: string;
+  details?: unknown | null;
 };

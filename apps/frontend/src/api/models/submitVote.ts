@@ -6,6 +6,6 @@
  */
 
 export interface SubmitVote {
-	/** @minLength 1 */
-	selectedOption: string;
+  /** @minLength 1 */
+  selectedOption: string;
 }

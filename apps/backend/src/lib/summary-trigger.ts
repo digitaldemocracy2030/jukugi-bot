@@ -5,7 +5,7 @@
 
 import { and, eq, gt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { discussionSummaries, phases, rooms, transcripts } from "../db/schema";
+import { discussionSummaries, participants, phases, rooms, sessionParticipations, transcripts } from "../db/schema";
 import { generateSummaryText } from "./ai";
 import { generateId } from "./id";
 
@@ -64,8 +64,14 @@ export async function generateAndSaveSummary(
 	];
 
 	const newTranscriptRows = await db
-		.select()
+		.select({
+			content: transcripts.content,
+			participantId: transcripts.participantId,
+			displayName: participants.displayName,
+		})
 		.from(transcripts)
+		.leftJoin(sessionParticipations, eq(transcripts.participantId, sessionParticipations.id))
+		.leftJoin(participants, eq(sessionParticipations.participantId, participants.id))
 		.where(and(...conditions))
 		.all();
 
@@ -73,9 +79,19 @@ export async function generateAndSaveSummary(
 		return { result: "no_new_transcripts" };
 	}
 
-	// 4. Build transcript text
-	const transcriptText = newTranscriptRows
-		.map((t) => `[${t.participantId ?? "unknown"}]: ${t.content}`)
+	// 4. Build transcript text — merge consecutive same-speaker entries
+	const merged: { name: string; text: string }[] = [];
+	for (const t of newTranscriptRows) {
+		const name = t.displayName ?? "unknown";
+		const last = merged.length > 0 ? merged[merged.length - 1] : null;
+		if (last && last.name === name) {
+			last.text += t.content;
+		} else {
+			merged.push({ name, text: t.content });
+		}
+	}
+	const transcriptText = merged
+		.map((m) => `[${m.name}]: ${m.text}`)
 		.join("\n");
 
 	// 5. Generate summary via LLM

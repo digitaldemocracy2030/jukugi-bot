@@ -5,9 +5,9 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type CreateSurveyPhaseType =
-	(typeof CreateSurveyPhaseType)[keyof typeof CreateSurveyPhaseType];
+export type CreateSurveyPhaseType = typeof CreateSurveyPhaseType[keyof typeof CreateSurveyPhaseType];
+
 
 export const CreateSurveyPhaseType = {
-	survey: "survey",
+  survey: 'survey',
 } as const;

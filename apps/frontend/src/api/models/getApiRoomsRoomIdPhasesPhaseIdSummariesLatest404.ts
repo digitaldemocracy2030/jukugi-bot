@@ -6,5 +6,5 @@
  */
 
 export type GetApiRoomsRoomIdPhasesPhaseIdSummariesLatest404 = {
-	error: string;
+  error: string;
 };

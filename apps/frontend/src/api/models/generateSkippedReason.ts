@@ -5,10 +5,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type GenerateSkippedReason =
-	(typeof GenerateSkippedReason)[keyof typeof GenerateSkippedReason];
+export type GenerateSkippedReason = typeof GenerateSkippedReason[keyof typeof GenerateSkippedReason];
+
 
 export const GenerateSkippedReason = {
-	too_recent: "too_recent",
-	no_new_transcripts: "no_new_transcripts",
+  too_recent: 'too_recent',
+  no_new_transcripts: 'no_new_transcripts',
 } as const;

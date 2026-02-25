@@ -4,22 +4,22 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { RecordingStatus } from "./recordingStatus";
+import type { RecordingStatus } from './recordingStatus';
 
 export interface Recording {
-	id: string;
-	roomId: string;
-	egressId: string;
-	status: RecordingStatus;
-	/** @nullable */
-	storageKey: string | null;
-	/** @nullable */
-	storageUrl: string | null;
-	startedAt: string;
-	/** @nullable */
-	endedAt: string | null;
-	/** @nullable */
-	durationSec: number | null;
-	/** @nullable */
-	fileSize: number | null;
+  id: string;
+  roomId: string;
+  egressId: string;
+  status: RecordingStatus;
+  /** @nullable */
+  storageKey: string | null;
+  /** @nullable */
+  storageUrl: string | null;
+  startedAt: string;
+  /** @nullable */
+  endedAt: string | null;
+  /** @nullable */
+  durationSec: number | null;
+  /** @nullable */
+  fileSize: number | null;
 }

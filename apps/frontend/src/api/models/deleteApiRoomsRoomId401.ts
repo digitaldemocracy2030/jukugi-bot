@@ -6,5 +6,5 @@
  */
 
 export type DeleteApiRoomsRoomId401 = {
-	error: string;
+  error: string;
 };

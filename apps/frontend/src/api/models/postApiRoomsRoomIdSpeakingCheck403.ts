@@ -6,5 +6,5 @@
  */
 
 export type PostApiRoomsRoomIdSpeakingCheck403 = {
-	error: string;
+  error: string;
 };

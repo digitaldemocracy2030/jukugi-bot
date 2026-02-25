@@ -4,11 +4,11 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { SurveyPhaseConfigQuestionsItemType } from "./surveyPhaseConfigQuestionsItemType";
+import type { SurveyPhaseConfigQuestionsItemType } from './surveyPhaseConfigQuestionsItemType';
 
 export type SurveyPhaseConfigQuestionsItem = {
-	id: string;
-	text: string;
-	type: SurveyPhaseConfigQuestionsItemType;
-	options?: string[];
+  id: string;
+  text: string;
+  type: SurveyPhaseConfigQuestionsItemType;
+  options?: string[];
 };

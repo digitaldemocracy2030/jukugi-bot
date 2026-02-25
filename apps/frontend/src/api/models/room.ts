@@ -4,16 +4,16 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { RoomStatus } from "./roomStatus";
+import type { RoomStatus } from './roomStatus';
 
 export interface Room {
-	id: string;
-	slug: string;
-	title: string;
-	/** @nullable */
-	description: string | null;
-	status: RoomStatus;
-	maxParticipants: number;
-	createdAt: string;
-	updatedAt: string;
+  id: string;
+  slug: string;
+  title: string;
+  /** @nullable */
+  description: string | null;
+  status: RoomStatus;
+  maxParticipants: number;
+  createdAt: string;
+  updatedAt: string;
 }

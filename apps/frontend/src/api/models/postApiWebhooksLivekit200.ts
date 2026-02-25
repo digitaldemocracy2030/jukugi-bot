@@ -6,5 +6,5 @@
  */
 
 export type PostApiWebhooksLivekit200 = {
-	ok: boolean;
+  ok: boolean;
 };

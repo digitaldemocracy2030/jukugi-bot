@@ -8,10 +8,14 @@ type TranscriptionPanelProps = {
 };
 
 function resolveDisplayName(
-	identity: string,
-	participants: { identity: string; metadata?: string }[],
+	entry: { participantIdentity: string; displayName: string | null },
+	participants: { identity: string; name?: string; metadata?: string }[],
 ): string {
-	const participant = participants.find((p) => p.identity === identity);
+	// Prefer displayName from backend API
+	if (entry.displayName) return entry.displayName;
+	// Fallback: LiveKit participant name
+	const participant = participants.find((p) => p.identity === entry.participantIdentity);
+	if (participant?.name) return participant.name;
 	if (participant?.metadata) {
 		try {
 			const meta = JSON.parse(participant.metadata);
@@ -20,7 +24,7 @@ function resolveDisplayName(
 			// ignore
 		}
 	}
-	return identity;
+	return entry.participantIdentity;
 }
 
 export function TranscriptionPanel({ entries }: TranscriptionPanelProps) {
@@ -54,7 +58,7 @@ export function TranscriptionPanel({ entries }: TranscriptionPanelProps) {
 						entries.map((entry) => (
 							<div key={entry.id} className="flex gap-2 text-sm">
 								<Typography variant="caption" weight="semibold" className="shrink-0 min-w-[5rem]">
-									{resolveDisplayName(entry.participantIdentity, participants)}
+									{resolveDisplayName(entry, participants)}
 								</Typography>
 								<Typography
 									variant="body"

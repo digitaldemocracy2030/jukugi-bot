@@ -5,9 +5,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type JoinRoomRole = (typeof JoinRoomRole)[keyof typeof JoinRoomRole];
+export type JoinRoomRole = typeof JoinRoomRole[keyof typeof JoinRoomRole];
+
 
 export const JoinRoomRole = {
-	participant: "participant",
-	facilitator: "facilitator",
+  participant: 'participant',
+  facilitator: 'facilitator',
 } as const;

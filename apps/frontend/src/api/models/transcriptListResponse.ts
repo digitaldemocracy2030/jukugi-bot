@@ -4,8 +4,8 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { Transcript } from "./transcript";
+import type { Transcript } from './transcript';
 
 export interface TranscriptListResponse {
-	transcripts: Transcript[];
+  transcripts: Transcript[];
 }

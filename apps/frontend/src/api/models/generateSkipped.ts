@@ -4,9 +4,9 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { GenerateSkippedReason } from "./generateSkippedReason";
+import type { GenerateSkippedReason } from './generateSkippedReason';
 
 export interface GenerateSkipped {
-	skipped: boolean;
-	reason: GenerateSkippedReason;
+  skipped: boolean;
+  reason: GenerateSkippedReason;
 }

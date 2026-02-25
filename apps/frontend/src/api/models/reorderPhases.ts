@@ -6,6 +6,6 @@
  */
 
 export interface ReorderPhases {
-	/** @minItems 1 */
-	orderedIds: string[];
+  /** @minItems 1 */
+  orderedIds: string[];
 }

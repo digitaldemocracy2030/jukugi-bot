@@ -4,17 +4,17 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { VideoPhaseConfig } from "./videoPhaseConfig";
-import type { VideoPhaseFeatureFlags } from "./videoPhaseFeatureFlags";
-import type { VideoPhaseType } from "./videoPhaseType";
+import type { VideoPhaseConfig } from './videoPhaseConfig';
+import type { VideoPhaseFeatureFlags } from './videoPhaseFeatureFlags';
+import type { VideoPhaseType } from './videoPhaseType';
 
 export interface VideoPhase {
-	id: string;
-	roomId: string;
-	title: string;
-	sortOrder: number;
-	createdAt: string;
-	type: VideoPhaseType;
-	config: VideoPhaseConfig;
-	featureFlags: VideoPhaseFeatureFlags;
+  id: string;
+  roomId: string;
+  title: string;
+  sortOrder: number;
+  createdAt: string;
+  type: VideoPhaseType;
+  config: VideoPhaseConfig;
+  featureFlags: VideoPhaseFeatureFlags;
 }

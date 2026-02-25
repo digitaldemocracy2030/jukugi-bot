@@ -6,6 +6,6 @@
  */
 
 export type PostApiRoomsRoomIdTransitionProposals425 = {
-	error: string;
-	remainingSec: number;
+  error: string;
+  remainingSec: number;
 };

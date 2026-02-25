@@ -176,6 +176,8 @@ services:
     container_name: my-app-transcription-agent
     profiles:
       - transcription
+    volumes:
+      - ./apps/transcription-agent/src:/app/apps/transcription-agent/src:ro
     environment:
       - LIVEKIT_URL=${LIVEKIT_URL:-http://livekit-server:7880}
       - LIVEKIT_API_KEY=${LIVEKIT_API_KEY:-devkey}

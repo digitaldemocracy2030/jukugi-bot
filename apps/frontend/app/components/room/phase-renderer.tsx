@@ -1,7 +1,9 @@
 import type { RoomMetadata } from "../../types/room-metadata";
 import { Spinner, Stack, Typography } from "../design-system";
 import { DiscussionPhase } from "./phases/discussion-phase";
+import { SurveyPhase } from "./phases/survey-phase";
 import { VideoPhase } from "./phases/video-phase";
+import { VotingPhase } from "./phases/voting-phase";
 
 type PhaseRendererProps = {
 	metadata: RoomMetadata | null;
@@ -35,15 +37,13 @@ export function PhaseRenderer({ metadata, roomId }: PhaseRendererProps) {
 		return <DiscussionPhase metadata={metadata} roomId={roomId} />;
 	}
 
-	// "voting" | "survey" — placeholder
-	return (
-		<Stack direction="vertical" align="center" justify="center" className="flex-1" gap={3}>
-			<Typography variant="h4" color="muted" align="center">
-				{phaseType === "voting" ? "投票フェーズ" : "アンケートフェーズ"}
-			</Typography>
-			<Typography variant="body-sm" color="muted" align="center">
-				このフェーズは現在開発中です
-			</Typography>
-		</Stack>
-	);
+	if (phaseType === "voting") {
+		return <VotingPhase metadata={metadata} roomId={roomId} />;
+	}
+
+	if (phaseType === "survey") {
+		return <SurveyPhase metadata={metadata} roomId={roomId} />;
+	}
+
+	return null;
 }

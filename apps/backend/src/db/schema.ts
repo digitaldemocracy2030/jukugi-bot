@@ -1,5 +1,6 @@
 import { integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import type { DbPhaseFeatureFlags, PhaseConfig } from "../schemas/phase.schema";
+import type { SurveyAnswerItem } from "../schemas/survey.schema";
 
 export const rooms = sqliteTable("rooms", {
 	id: text("id").primaryKey(),
@@ -172,5 +173,49 @@ export const phaseTransitionVotes = sqliteTable(
 			table.proposalId,
 			table.participantId,
 		),
+	],
+);
+
+/** Voting phase answers — one vote per participant per phase */
+export const votingAnswers = sqliteTable(
+	"voting_answers",
+	{
+		id: text("id").primaryKey(),
+		roomId: text("room_id")
+			.notNull()
+			.references(() => rooms.id, { onDelete: "cascade" }),
+		phaseId: text("phase_id")
+			.notNull()
+			.references(() => phases.id, { onDelete: "cascade" }),
+		participantId: text("participant_id").notNull(),
+		selectedOption: text("selected_option").notNull(),
+		createdAt: integer("created_at", { mode: "timestamp" })
+			.$defaultFn(() => new Date())
+			.notNull(),
+	},
+	(table) => [
+		uniqueIndex("voting_answers_phase_participant_uniq").on(table.phaseId, table.participantId),
+	],
+);
+
+/** Survey phase responses — one response set per participant per phase */
+export const surveyResponses = sqliteTable(
+	"survey_responses",
+	{
+		id: text("id").primaryKey(),
+		roomId: text("room_id")
+			.notNull()
+			.references(() => rooms.id, { onDelete: "cascade" }),
+		phaseId: text("phase_id")
+			.notNull()
+			.references(() => phases.id, { onDelete: "cascade" }),
+		participantId: text("participant_id").notNull(),
+		answers: text("answers", { mode: "json" }).$type<SurveyAnswerItem[]>().notNull(),
+		createdAt: integer("created_at", { mode: "timestamp" })
+			.$defaultFn(() => new Date())
+			.notNull(),
+	},
+	(table) => [
+		uniqueIndex("survey_responses_phase_participant_uniq").on(table.phaseId, table.participantId),
 	],
 );

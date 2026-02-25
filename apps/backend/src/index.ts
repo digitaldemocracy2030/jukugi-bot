@@ -9,8 +9,10 @@ import recordingRoute from "./routes/recording";
 import roomsRoute from "./routes/rooms";
 import sessionRoute from "./routes/session";
 import speakingRoute from "./routes/speaking";
+import surveyRoute from "./routes/survey";
 import transcriptionRoute from "./routes/transcription";
 import transitionRoute from "./routes/transition";
+import votingRoute from "./routes/voting";
 import webhooksRoute from "./routes/webhooks";
 
 type Bindings = {
@@ -59,6 +61,8 @@ app.route("/", speakingRoute);
 app.route("/", recordingRoute);
 app.route("/", transitionRoute);
 app.route("/", transcriptionRoute);
+app.route("/", votingRoute);
+app.route("/", surveyRoute);
 app.route("/", webhooksRoute);
 
 // Register X-Admin-Key security scheme

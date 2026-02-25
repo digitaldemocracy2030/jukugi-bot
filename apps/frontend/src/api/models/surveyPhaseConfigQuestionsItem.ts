@@ -10,4 +10,5 @@ export type SurveyPhaseConfigQuestionsItem = {
 	id: string;
 	text: string;
 	type: SurveyPhaseConfigQuestionsItemType;
+	options?: string[];
 };

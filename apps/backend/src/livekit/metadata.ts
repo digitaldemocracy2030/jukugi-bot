@@ -1,4 +1,10 @@
-import type { PhaseType, RoomFeatureFlags, RoomMetadata, SpeakerQueue } from "./types";
+import type {
+	PhaseType,
+	RoomFeatureFlags,
+	RoomMetadata,
+	SpeakerQueue,
+	VideoPhaseMetadata,
+} from "./types";
 
 const defaultFeatureFlags: RoomFeatureFlags = {
 	canSpeak: false,
@@ -30,6 +36,26 @@ export function buildInitialMetadata(roomId: string): RoomMetadata {
 }
 
 /**
+ * Build VideoPhaseMetadata from a video phase's config.
+ * Returns undefined for non-video phases or when videoUrl is missing.
+ */
+export function buildVideoPhaseMetadata(
+	phaseType: PhaseType,
+	config: Record<string, unknown> | null | undefined,
+): VideoPhaseMetadata | undefined {
+	if (phaseType !== "video" || !config) return undefined;
+	const videoUrl = typeof config.videoUrl === "string" ? config.videoUrl : "";
+	if (!videoUrl) return undefined;
+	return {
+		videoId: videoUrl,
+		startAt: 0,
+		playing: false,
+		playStartedAt: null,
+		autoAdvance: config.autoAdvance === true,
+	};
+}
+
+/**
  * Build RoomMetadata for a specific phase transition.
  */
 export function buildPhaseMetadata(
@@ -37,6 +63,7 @@ export function buildPhaseMetadata(
 	phaseId: string,
 	phaseType: PhaseType,
 	featureFlags: Partial<RoomFeatureFlags> = {},
+	phaseConfig?: Record<string, unknown> | null,
 ): RoomMetadata {
 	return {
 		...current,
@@ -50,6 +77,8 @@ export function buildPhaseMetadata(
 		speakerQueue: { ...defaultSpeakerQueue },
 		// Clear any active transition proposal
 		transitionProposal: undefined,
+		// Set video phase metadata when transitioning to a video phase
+		videoPhase: buildVideoPhaseMetadata(phaseType, phaseConfig),
 	};
 }
 

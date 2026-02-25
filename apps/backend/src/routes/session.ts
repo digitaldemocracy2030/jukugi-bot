@@ -266,7 +266,7 @@ app.openapi(phaseTransitionRoute, async (c) => {
 	// Build updated metadata for the new phase (transitionProposal cleared by buildPhaseMetadata)
 	const flags = phaseFeatureFlagsToRoom(phase.featureFlags ?? {});
 	const baseMetadata = buildInitialMetadata(roomId);
-	const newMetadata = buildPhaseMetadata(baseMetadata, phaseId, phase.type, flags);
+	const newMetadata = buildPhaseMetadata(baseMetadata, phaseId, phase.type, flags, phase.config);
 
 	await updateRoomMetadata(roomName, serializeMetadata(newMetadata));
 

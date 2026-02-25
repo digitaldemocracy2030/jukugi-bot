@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // Extend Window with the YT global injected by the YouTube IFrame API
 declare global {
@@ -118,5 +118,9 @@ export function useYouTubePlayer({
 		};
 	}, []);
 
-	return { containerRef, playerRef, playerState };
+	const play = useCallback(() => {
+		playerRef.current?.playVideo();
+	}, []);
+
+	return { containerRef, playerRef, playerState, play };
 }

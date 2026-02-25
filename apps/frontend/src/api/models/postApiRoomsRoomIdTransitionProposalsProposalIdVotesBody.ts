@@ -4,8 +4,8 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBodyChoice } from "./postApiRoomsRoomIdTransitionProposalsProposalIdVotesBodyChoice";
+import type { PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBodyChoice } from './postApiRoomsRoomIdTransitionProposalsProposalIdVotesBodyChoice';
 
 export type PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBody = {
-	choice: PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBodyChoice;
+  choice: PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBodyChoice;
 };

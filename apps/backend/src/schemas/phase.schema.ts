@@ -63,6 +63,7 @@ export const SurveyPhaseConfigSchema = z
 					id: z.string(),
 					text: z.string(),
 					type: z.enum(["text", "scale", "choice"]),
+					options: z.array(z.string()).optional(),
 				}),
 			)
 			.optional(),

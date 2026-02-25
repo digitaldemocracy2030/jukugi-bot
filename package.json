@@ -7,7 +7,7 @@
 		"build": "pnpm --filter \"./apps/*\" build",
 		"typecheck": "pnpm --parallel --filter \"./apps/*\" typecheck",
 		"backend": "pnpm --filter backend",
-		"frontend": "pnpm --filter apps-frontend",
+		"frontend": "pnpm --filter frontend",
 		"biome:format": "biome format --write",
 		"biome:check": "biome check --write"
 	},

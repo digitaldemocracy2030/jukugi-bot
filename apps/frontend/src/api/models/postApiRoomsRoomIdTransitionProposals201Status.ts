@@ -5,13 +5,13 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type PostApiRoomsRoomIdTransitionProposals201Status =
-	(typeof PostApiRoomsRoomIdTransitionProposals201Status)[keyof typeof PostApiRoomsRoomIdTransitionProposals201Status];
+export type PostApiRoomsRoomIdTransitionProposals201Status = typeof PostApiRoomsRoomIdTransitionProposals201Status[keyof typeof PostApiRoomsRoomIdTransitionProposals201Status];
+
 
 export const PostApiRoomsRoomIdTransitionProposals201Status = {
-	open: "open",
-	approved: "approved",
-	rejected_by_admin: "rejected_by_admin",
-	expired: "expired",
-	cancelled: "cancelled",
+  open: 'open',
+  approved: 'approved',
+  rejected_by_admin: 'rejected_by_admin',
+  expired: 'expired',
+  cancelled: 'cancelled',
 } as const;

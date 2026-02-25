@@ -4,19 +4,19 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { CreateDiscussionPhaseType } from "./createDiscussionPhaseType";
-import type { DiscussionPhaseConfig } from "./discussionPhaseConfig";
-import type { DiscussionPhaseFeatureFlags } from "./discussionPhaseFeatureFlags";
+import type { CreateDiscussionPhaseType } from './createDiscussionPhaseType';
+import type { DiscussionPhaseConfig } from './discussionPhaseConfig';
+import type { DiscussionPhaseFeatureFlags } from './discussionPhaseFeatureFlags';
 
 export interface CreateDiscussionPhase {
-	type: CreateDiscussionPhaseType;
-	/**
-	 * @minLength 1
-	 * @maxLength 200
-	 */
-	title: string;
-	/** @minimum 0 */
-	sortOrder?: number;
-	config?: DiscussionPhaseConfig;
-	featureFlags?: DiscussionPhaseFeatureFlags;
+  type: CreateDiscussionPhaseType;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  title: string;
+  /** @minimum 0 */
+  sortOrder?: number;
+  config?: DiscussionPhaseConfig;
+  featureFlags?: DiscussionPhaseFeatureFlags;
 }

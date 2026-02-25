@@ -6,6 +6,6 @@
  */
 
 export interface QueueNext {
-	/** @exclusiveMinimum 0 */
-	speakingTimeSec?: number;
+  /** @exclusiveMinimum 0 */
+  speakingTimeSec?: number;
 }

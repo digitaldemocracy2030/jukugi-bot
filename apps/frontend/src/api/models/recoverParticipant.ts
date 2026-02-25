@@ -6,6 +6,6 @@
  */
 
 export interface RecoverParticipant {
-	/** @minLength 1 */
-	recoveryCode: string;
+  /** @minLength 1 */
+  recoveryCode: string;
 }

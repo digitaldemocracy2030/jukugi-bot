@@ -26,6 +26,7 @@ export const TranscriptSchema = z
 		id: z.string(),
 		roomId: z.string(),
 		participantId: z.string().nullable(),
+		displayName: z.string().nullable(),
 		phaseId: z.string().nullable(),
 		content: z.string(),
 		language: z.string(),
@@ -100,7 +101,6 @@ export const listTranscriptsRoute = createRoute({
 	path: "/api/rooms/{roomId}/transcripts",
 	tags: ["Transcription"],
 	summary: "List transcripts for a room",
-	security: [{ AdminKeyAuth: [] }],
 	request: {
 		params: RoomIdParams,
 		query: TranscriptQuerySchema,
@@ -109,10 +109,6 @@ export const listTranscriptsRoute = createRoute({
 		200: {
 			content: { "application/json": { schema: TranscriptListResponseSchema } },
 			description: "List of transcripts",
-		},
-		401: {
-			content: { "application/json": { schema: ErrorSchema } },
-			description: "Unauthorized",
 		},
 		404: {
 			content: { "application/json": { schema: ErrorSchema } },

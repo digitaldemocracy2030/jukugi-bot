@@ -13,16 +13,6 @@ type VideoPhaseProps = {
 
 type VideoEventMessage = { type: "VIDEO_ENDED" };
 
-/** Compute the expected current playback position from server metadata. */
-function computeCurrentTime(
-	startAt: number,
-	playing: boolean,
-	playStartedAt: number | null,
-): number {
-	if (!playing || playStartedAt === null) return startAt;
-	return startAt + (Date.now() - playStartedAt) / 1000;
-}
-
 /** Extract YouTube video ID from a URL or plain ID string. */
 function extractVideoId(videoUrl: string): string {
 	try {
@@ -107,40 +97,13 @@ export function VideoPhase({ metadata, roomId }: VideoPhaseProps) {
 		}
 	}, [broadcastVideoEnded, isFacilitator, autoAdvance, advancePhase]);
 
-	const { containerRef, playerRef, playerState } = useYouTubePlayer({
+	const { containerRef, playerRef, playerState, play } = useYouTubePlayer({
 		videoId,
-		startAt: videoPhase
-			? computeCurrentTime(videoPhase.startAt, videoPhase.playing, videoPhase.playStartedAt)
-			: 0,
+		startAt: videoPhase?.startAt ?? 0,
 		onStateChange: (state) => {
 			if (state === "ended") handleVideoEnded();
 		},
 	});
-
-	// Sync playback state when metadata changes
-	useEffect(() => {
-		const player = playerRef.current;
-		if (!player || !videoPhase) return;
-
-		const expectedTime = computeCurrentTime(
-			videoPhase.startAt,
-			videoPhase.playing,
-			videoPhase.playStartedAt,
-		);
-		const currentTime = player.getCurrentTime?.() ?? 0;
-		const drift = Math.abs(currentTime - expectedTime);
-
-		// Re-seek if more than 2 seconds out of sync
-		if (drift > 2) {
-			player.seekTo(expectedTime, true);
-		}
-
-		if (videoPhase.playing) {
-			player.playVideo?.();
-		} else {
-			player.pauseVideo?.();
-		}
-	}, [videoPhase, playerRef]);
 
 	// Listen for video-sync commands from facilitator
 	useDataMessage<VideoSyncMessage>("video-sync", (msg) => {
@@ -188,6 +151,8 @@ export function VideoPhase({ metadata, roomId }: VideoPhaseProps) {
 		);
 	}
 
+	const hasStarted = playerState === "playing" || playerState === "paused" || playerState === "buffering" || playerState === "ended";
+
 	const statusLabel =
 		playerState === "playing"
 			? "再生中"
@@ -218,6 +183,17 @@ export function VideoPhase({ metadata, roomId }: VideoPhaseProps) {
 			<div className="w-full max-w-3xl aspect-video rounded-lg overflow-hidden bg-black shadow-lg">
 				<div ref={containerRef} className="w-full h-full" />
 			</div>
+
+			{!hasStarted && (
+				<Stack direction="vertical" align="center" gap={2}>
+					<Typography variant="body" color="muted">
+						音声が流れます。準備ができたら再生ボタンを押してください。
+					</Typography>
+					<Button variant="primary" onClick={play}>
+						再生
+					</Button>
+				</Stack>
+			)}
 
 			{/* Facilitator controls */}
 			{isFacilitator && (

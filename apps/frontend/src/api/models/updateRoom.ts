@@ -4,23 +4,23 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { UpdateRoomStatus } from "./updateRoomStatus";
+import type { UpdateRoomStatus } from './updateRoomStatus';
 
 export interface UpdateRoom {
-	/**
-	 * @minLength 1
-	 * @maxLength 200
-	 */
-	title?: string;
-	/**
-	 * @maxLength 2000
-	 * @nullable
-	 */
-	description?: string | null;
-	status?: UpdateRoomStatus;
-	/**
-	 * @minimum 2
-	 * @maximum 100
-	 */
-	maxParticipants?: number;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  title?: string;
+  /**
+   * @maxLength 2000
+   * @nullable
+   */
+  description?: string | null;
+  status?: UpdateRoomStatus;
+  /**
+   * @minimum 2
+   * @maximum 100
+   */
+  maxParticipants?: number;
 }

@@ -20,6 +20,7 @@ import {
 	Typography,
 } from "../../design-system";
 import { ParticipantSidebar } from "../participant-sidebar";
+import { SummaryPanel } from "../summary-panel";
 import { TranscriptionPanel } from "../transcription-panel";
 import { ProposeTransitionButton } from "../transition/propose-transition-button";
 import { TransitionVotePanel } from "../transition/transition-vote-panel";
@@ -72,7 +73,7 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 	const interruptMutation = usePostApiRoomsRoomIdInterrupt();
 	const endInterruptionMutation = usePostApiRoomsRoomIdInterruptParticipantIdEnd();
 
-	const transcriptionEntries = useTranscription();
+	const transcriptionEntries = useTranscription(roomId);
 	const [interruptDialogOpen, setInterruptDialogOpen] = useState(false);
 
 	const participantMeta = (() => {
@@ -293,6 +294,9 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 
 				{/* Transcription */}
 				<TranscriptionPanel entries={transcriptionEntries} />
+
+				{/* AI Summary */}
+				<SummaryPanel roomId={roomId} phaseId={metadata?.currentPhaseId ?? null} />
 
 				{/* Phase transition */}
 				<Divider />

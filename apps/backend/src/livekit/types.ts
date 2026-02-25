@@ -31,6 +31,14 @@ export interface SpeakerQueue {
 	interruptions: InterruptionEntry[];
 }
 
+export interface VideoPhaseMetadata {
+	videoId: string;
+	startAt: number;
+	playing: boolean;
+	playStartedAt: number | null;
+	autoAdvance: boolean;
+}
+
 export interface RoomMetadata {
 	roomId: string;
 	currentPhaseId: string | null;
@@ -47,6 +55,7 @@ export interface RoomMetadata {
 		requiredThreshold: number;
 		expiresAt: string | null;
 	};
+	videoPhase?: VideoPhaseMetadata;
 }
 
 // ─── Participant Metadata ─────────────────────────────────────────────────────

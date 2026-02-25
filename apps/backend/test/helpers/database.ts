@@ -5,6 +5,9 @@
 /** Delete all table data in dependency order */
 export async function cleanDatabase(db: D1Database) {
 	await db.batch([
+		db.prepare("DELETE FROM discussion_summaries"),
+		db.prepare("DELETE FROM voting_answers"),
+		db.prepare("DELETE FROM survey_responses"),
 		db.prepare("DELETE FROM phase_transition_votes"),
 		db.prepare("DELETE FROM phase_transition_proposals"),
 		db.prepare("DELETE FROM phase_activations"),

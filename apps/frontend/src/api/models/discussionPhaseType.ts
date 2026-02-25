@@ -5,8 +5,9 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type DiscussionPhaseType = (typeof DiscussionPhaseType)[keyof typeof DiscussionPhaseType];
+export type DiscussionPhaseType = typeof DiscussionPhaseType[keyof typeof DiscussionPhaseType];
+
 
 export const DiscussionPhaseType = {
-	discussion: "discussion",
+  discussion: 'discussion',
 } as const;

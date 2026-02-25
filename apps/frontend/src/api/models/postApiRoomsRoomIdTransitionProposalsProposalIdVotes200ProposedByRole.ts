@@ -5,10 +5,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type PostApiRoomsRoomIdTransitionProposalsProposalIdVotes200ProposedByRole =
-	(typeof PostApiRoomsRoomIdTransitionProposalsProposalIdVotes200ProposedByRole)[keyof typeof PostApiRoomsRoomIdTransitionProposalsProposalIdVotes200ProposedByRole];
+export type PostApiRoomsRoomIdTransitionProposalsProposalIdVotes200ProposedByRole = typeof PostApiRoomsRoomIdTransitionProposalsProposalIdVotes200ProposedByRole[keyof typeof PostApiRoomsRoomIdTransitionProposalsProposalIdVotes200ProposedByRole];
+
 
 export const PostApiRoomsRoomIdTransitionProposalsProposalIdVotes200ProposedByRole = {
-	admin: "admin",
-	participant: "participant",
+  admin: 'admin',
+  participant: 'participant',
 } as const;

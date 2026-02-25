@@ -4,19 +4,19 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { PhaseFeatureFlags } from "./phaseFeatureFlags";
-import type { UpdatePhaseConfig } from "./updatePhaseConfig";
-import type { UpdatePhaseType } from "./updatePhaseType";
+import type { PhaseFeatureFlags } from './phaseFeatureFlags';
+import type { UpdatePhaseConfig } from './updatePhaseConfig';
+import type { UpdatePhaseType } from './updatePhaseType';
 
 export interface UpdatePhase {
-	type?: UpdatePhaseType;
-	/**
-	 * @minLength 1
-	 * @maxLength 200
-	 */
-	title?: string;
-	/** @minimum 0 */
-	sortOrder?: number;
-	config?: UpdatePhaseConfig;
-	featureFlags?: PhaseFeatureFlags;
+  type?: UpdatePhaseType;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  title?: string;
+  /** @minimum 0 */
+  sortOrder?: number;
+  config?: UpdatePhaseConfig;
+  featureFlags?: PhaseFeatureFlags;
 }

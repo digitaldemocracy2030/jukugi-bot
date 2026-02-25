@@ -5,10 +5,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBodyChoice =
-	(typeof PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBodyChoice)[keyof typeof PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBodyChoice];
+export type PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBodyChoice = typeof PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBodyChoice[keyof typeof PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBodyChoice];
+
 
 export const PostApiRoomsRoomIdTransitionProposalsProposalIdVotesBodyChoice = {
-	yes: "yes",
-	no: "no",
+  yes: 'yes',
+  no: 'no',
 } as const;

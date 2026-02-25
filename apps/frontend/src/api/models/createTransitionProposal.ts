@@ -6,5 +6,5 @@
  */
 
 export interface CreateTransitionProposal {
-	toPhaseId?: string;
+  toPhaseId?: string;
 }

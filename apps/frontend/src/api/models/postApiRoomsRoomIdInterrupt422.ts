@@ -6,6 +6,6 @@
  */
 
 export type PostApiRoomsRoomIdInterrupt422 = {
-	error: string;
-	details?: unknown | null;
+  error: string;
+  details?: unknown | null;
 };

@@ -6,15 +6,15 @@
  */
 
 export interface VotingPhaseFeatureFlags {
-	participantCanProposeTransition?: boolean;
-	/** @minimum 0 */
-	transitionMinDurationSec?: number;
-	/**
-	 * @minimum 0
-	 * @maximum 1
-	 */
-	transitionThreshold?: number;
-	/** @exclusiveMinimum 0 */
-	transitionVoteDurationSec?: number;
-	canVote?: boolean;
+  participantCanProposeTransition?: boolean;
+  /** @minimum 0 */
+  transitionMinDurationSec?: number;
+  /**
+   * @minimum 0
+   * @maximum 1
+   */
+  transitionThreshold?: number;
+  /** @exclusiveMinimum 0 */
+  transitionVoteDurationSec?: number;
+  canVote?: boolean;
 }

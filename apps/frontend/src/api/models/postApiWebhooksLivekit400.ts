@@ -6,5 +6,5 @@
  */
 
 export type PostApiWebhooksLivekit400 = {
-  error: string;
+	error: string;
 };

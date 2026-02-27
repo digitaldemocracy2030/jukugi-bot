@@ -1,7 +1,13 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { and, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { participants, phaseActivations, rooms, sessionParticipations, transcripts } from "../db/schema";
+import {
+	participants,
+	phaseActivations,
+	rooms,
+	sessionParticipations,
+	transcripts,
+} from "../db/schema";
 import { isAiConfigured } from "../lib/ai";
 import { generateId } from "../lib/id";
 import { adminAuth } from "../middleware/admin-auth";
@@ -72,7 +78,9 @@ app.openapi(createTranscriptRoute, async (c) => {
 			.get();
 		sessionParticipationId = sp?.id ?? null;
 		if (!sessionParticipationId) {
-			console.warn(`[transcription] Could not resolve sessionParticipation for participant=${body.participantId}, room=${roomId}`);
+			console.warn(
+				`[transcription] Could not resolve sessionParticipation for participant=${body.participantId}, room=${roomId}`,
+			);
 		}
 	}
 
@@ -82,22 +90,20 @@ app.openapi(createTranscriptRoute, async (c) => {
 		const activePhase = await db
 			.select({ phaseId: phaseActivations.phaseId })
 			.from(phaseActivations)
-			.where(
-				and(
-					eq(phaseActivations.roomId, roomId),
-					isNull(phaseActivations.endedAt),
-				),
-			)
+			.where(and(eq(phaseActivations.roomId, roomId), isNull(phaseActivations.endedAt)))
 			.get();
 		resolvedPhaseId = activePhase?.phaseId ?? null;
 	}
 
-	console.log("[transcription] Resolved:", JSON.stringify({
-		sessionParticipationId,
-		resolvedPhaseId,
-		isFinal: body.isFinal,
-		contentLength: body.content.length,
-	}));
+	console.log(
+		"[transcription] Resolved:",
+		JSON.stringify({
+			sessionParticipationId,
+			resolvedPhaseId,
+			isFinal: body.isFinal,
+			contentLength: body.content.length,
+		}),
+	);
 
 	const transcriptId = generateId();
 	await db.insert(transcripts).values({
@@ -119,12 +125,15 @@ app.openapi(createTranscriptRoute, async (c) => {
 		console.log("[transcription] Enqueueing summary generation for phase:", resolvedPhaseId);
 		c.executionCtx.waitUntil(c.env.SUMMARY_QUEUE.send({ roomId, phaseId: resolvedPhaseId }));
 	} else {
-		console.log("[transcription] Summary queue skip:", JSON.stringify({
-			isFinal: body.isFinal,
-			hasPhaseId: !!resolvedPhaseId,
-			aiConfigured: isAiConfigured(),
-			queueAvailable: !!c.env.SUMMARY_QUEUE,
-		}));
+		console.log(
+			"[transcription] Summary queue skip:",
+			JSON.stringify({
+				isFinal: body.isFinal,
+				hasPhaseId: !!resolvedPhaseId,
+				aiConfigured: isAiConfigured(),
+				queueAvailable: !!c.env.SUMMARY_QUEUE,
+			}),
+		);
 	}
 
 	return c.json({ transcriptId }, 201);
@@ -166,12 +175,17 @@ app.openapi(listTranscriptsRoute, async (c) => {
 		.where(and(...conditions))
 		.all();
 
-	return c.json({
-		transcripts: rows.map((r) => formatTranscript(r.transcript, {
-			participantIdentity: r.participantIdentity,
-			displayName: r.displayName,
-		})),
-	}, 200);
+	return c.json(
+		{
+			transcripts: rows.map((r) =>
+				formatTranscript(r.transcript, {
+					participantIdentity: r.participantIdentity,
+					displayName: r.displayName,
+				}),
+			),
+		},
+		200,
+	);
 });
 
 export default app;

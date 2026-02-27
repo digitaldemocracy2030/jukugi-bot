@@ -45,6 +45,9 @@ export const VideoPhaseConfigSchema = z
 export const DiscussionPhaseConfigSchema = z
 	.object({
 		topic: z.string().optional(),
+		summaryModel: z.string().optional(),
+		summaryPromptTemplateId: z.string().optional(),
+		summaryGraphEnabled: z.boolean().optional(),
 	})
 	.openapi("DiscussionPhaseConfig");
 

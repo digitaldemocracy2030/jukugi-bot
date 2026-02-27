@@ -278,7 +278,13 @@ app.openapi(createProposalRoute, async (c) => {
 		const roomName = livekitRoomName(roomId);
 		const baseMetadata = buildInitialMetadata(roomId);
 		const currentFlags = phaseFeatureFlagsToRoom(flags);
-		const metadata = buildPhaseMetadata(baseMetadata, activation.phaseId, phase.type, currentFlags, phase.config);
+		const metadata = buildPhaseMetadata(
+			baseMetadata,
+			activation.phaseId,
+			phase.type,
+			currentFlags,
+			phase.config,
+		);
 		const updatedMetadata = updateTransitionProposal(metadata, {
 			id: proposalId,
 			proposedByRole: role,
@@ -499,7 +505,13 @@ app.openapi(castVoteRoute, async (c) => {
 				const roomName = livekitRoomName(roomId);
 				const flags = phaseFeatureFlagsToRoom(phase.featureFlags ?? {});
 				const baseMetadata = buildInitialMetadata(roomId);
-				const metadata = buildPhaseMetadata(baseMetadata, proposal.fromPhaseId, phase.type, flags, phase.config);
+				const metadata = buildPhaseMetadata(
+					baseMetadata,
+					proposal.fromPhaseId,
+					phase.type,
+					flags,
+					phase.config,
+				);
 				const updatedMetadata = updateTransitionProposal(metadata, {
 					id: proposalId,
 					proposedByRole: proposal.proposedByRole,
@@ -563,7 +575,13 @@ app.openapi(rejectProposalRoute, async (c) => {
 			const roomName = livekitRoomName(roomId);
 			const flags = phaseFeatureFlagsToRoom(phase.featureFlags ?? {});
 			const baseMetadata = buildInitialMetadata(roomId);
-			const metadata = buildPhaseMetadata(baseMetadata, proposal.fromPhaseId, phase.type, flags, phase.config);
+			const metadata = buildPhaseMetadata(
+				baseMetadata,
+				proposal.fromPhaseId,
+				phase.type,
+				flags,
+				phase.config,
+			);
 			await updateRoomMetadata(roomName, serializeMetadata(metadata));
 		}
 	} catch {

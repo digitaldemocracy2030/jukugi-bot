@@ -6,5 +6,5 @@
  */
 
 export type GetApiRoomsSlug404 = {
-  error: string;
+	error: string;
 };

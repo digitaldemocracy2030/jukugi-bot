@@ -6,6 +6,6 @@
  */
 
 export interface StartRecordingResponse {
-  recordingId: string;
-  egressId: string;
+	recordingId: string;
+	egressId: string;
 }

@@ -72,17 +72,35 @@ export type SummaryResult = {
 	model: string;
 };
 
+export type SummaryOptions = {
+	modelId?: string;
+	systemPrompt?: string;
+	userPrompt?: string;
+};
+
 export async function generateSummaryText(
 	previousSummary: string | null,
 	newTranscripts: string,
 	size: ModelSize = "medium",
+	options?: SummaryOptions,
 ): Promise<SummaryResult> {
-	const model = getModel(size);
-	const modelId = resolveModelId(size);
+	let model: LanguageModel;
+	let modelId: string;
+
+	if (options?.modelId) {
+		const env = getEnv();
+		const openai = createOpenAI({ apiKey: env.OPENAI_API_KEY });
+		model = openai(options.modelId);
+		modelId = options.modelId;
+	} else {
+		model = getModel(size);
+		modelId = resolveModelId(size);
+	}
+
 	const result = await generateText({
 		model,
-		system: buildSystemPrompt(),
-		prompt: buildUserPrompt(previousSummary, newTranscripts),
+		system: options?.systemPrompt ?? buildSystemPrompt(),
+		prompt: options?.userPrompt ?? buildUserPrompt(previousSummary, newTranscripts),
 	});
 
 	return {

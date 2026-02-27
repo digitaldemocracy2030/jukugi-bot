@@ -4,26 +4,26 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { CreateRoomStatus } from './createRoomStatus';
+import type { CreateRoomStatus } from "./createRoomStatus";
 
 export interface CreateRoom {
-  /**
-   * @minLength 1
-   * @maxLength 100
-   * @pattern ^[a-z0-9-]+$
-   */
-  slug: string;
-  /**
-   * @minLength 1
-   * @maxLength 200
-   */
-  title: string;
-  /** @maxLength 2000 */
-  description?: string;
-  status?: CreateRoomStatus;
-  /**
-   * @minimum 2
-   * @maximum 100
-   */
-  maxParticipants?: number;
+	/**
+	 * @minLength 1
+	 * @maxLength 100
+	 * @pattern ^[a-z0-9-]+$
+	 */
+	slug: string;
+	/**
+	 * @minLength 1
+	 * @maxLength 200
+	 */
+	title: string;
+	/** @maxLength 2000 */
+	description?: string;
+	status?: CreateRoomStatus;
+	/**
+	 * @minimum 2
+	 * @maximum 100
+	 */
+	maxParticipants?: number;
 }

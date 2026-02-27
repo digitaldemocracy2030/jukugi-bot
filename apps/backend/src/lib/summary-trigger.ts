@@ -5,9 +5,19 @@
 
 import { and, eq, gt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { discussionSummaries, participants, phases, rooms, sessionParticipations, transcripts } from "../db/schema";
+import {
+	discussionSummaries,
+	participants,
+	phases,
+	promptTemplates,
+	sessionParticipations,
+	transcripts,
+} from "../db/schema";
+import type { DiscussionPhaseConfig } from "../schemas/phase.schema";
+import type { SummaryOptions } from "./ai";
 import { generateSummaryText } from "./ai";
 import { generateId } from "./id";
+import { interpolatePromptTemplate } from "./prompts/interpolate";
 
 const DEBOUNCE_SECONDS = 30;
 
@@ -90,14 +100,45 @@ export async function generateAndSaveSummary(
 			merged.push({ name, text: t.content });
 		}
 	}
-	const transcriptText = merged
-		.map((m) => `[${m.name}]: ${m.text}`)
-		.join("\n");
+	const transcriptText = merged.map((m) => `[${m.name}]: ${m.text}`).join("\n");
 
-	// 5. Generate summary via LLM
-	const llmResult = await generateSummaryText(existing?.content ?? null, transcriptText);
+	// 5. Read phase config for custom model/prompt settings
+	const summaryOptions: SummaryOptions = {};
+	const phase = await db.select().from(phases).where(eq(phases.id, phaseId)).get();
+	if (phase) {
+		const config = phase.config as DiscussionPhaseConfig | null;
+		if (config?.summaryModel) {
+			summaryOptions.modelId = config.summaryModel;
+		}
+		if (config?.summaryPromptTemplateId) {
+			const template = await db
+				.select()
+				.from(promptTemplates)
+				.where(eq(promptTemplates.id, config.summaryPromptTemplateId))
+				.get();
+			if (template) {
+				summaryOptions.systemPrompt = template.systemPrompt;
+				const variables: Record<string, string> = {
+					previous_summary: existing?.content ?? "",
+					new_transcripts: transcriptText,
+				};
+				summaryOptions.userPrompt = interpolatePromptTemplate(
+					template.userPromptTemplate,
+					variables,
+				);
+			}
+		}
+	}
 
-	// 6. UPSERT: update if exists, insert if not
+	// 6. Generate summary via LLM
+	const llmResult = await generateSummaryText(
+		existing?.content ?? null,
+		transcriptText,
+		"medium",
+		Object.keys(summaryOptions).length > 0 ? summaryOptions : undefined,
+	);
+
+	// 7. UPSERT: update if exists, insert if not
 	const now = new Date();
 	if (existing) {
 		await db

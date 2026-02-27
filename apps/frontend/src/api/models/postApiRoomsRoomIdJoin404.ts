@@ -6,5 +6,5 @@
  */
 
 export type PostApiRoomsRoomIdJoin404 = {
-  error: string;
+	error: string;
 };

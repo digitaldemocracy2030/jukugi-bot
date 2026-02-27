@@ -3,9 +3,7 @@ import { useTransitionVote } from "~/hooks/use-transition-vote";
 
 interface ProposeTransitionButtonProps {
 	roomId: string;
-	participantId: string;
 	isAdmin: boolean;
-	adminKey?: string;
 	disabled: boolean;
 	featureFlags?: {
 		participantCanProposeTransition?: boolean;
@@ -14,29 +12,19 @@ interface ProposeTransitionButtonProps {
 
 export function ProposeTransitionButton({
 	roomId,
-	participantId,
 	isAdmin,
-	adminKey,
 	disabled,
 	featureFlags,
 }: ProposeTransitionButtonProps) {
-	const { propose, isProposing } = useTransitionVote(roomId, adminKey);
+	const { propose, isProposing } = useTransitionVote(roomId);
 
 	if (!isAdmin && !featureFlags?.participantCanProposeTransition) return null;
-
-	const handlePropose = async () => {
-		try {
-			await propose(participantId);
-		} catch (e: unknown) {
-			console.error("Proposal failed:", e);
-		}
-	};
 
 	return (
 		<Button
 			size="sm"
 			variant="outline"
-			onClick={handlePropose}
+			onClick={() => propose()}
 			loading={isProposing}
 			disabled={disabled}
 		>

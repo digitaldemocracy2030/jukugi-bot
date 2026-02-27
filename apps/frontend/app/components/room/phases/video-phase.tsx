@@ -4,7 +4,9 @@ import { usePostApiRoomsRoomIdPhaseTransition } from "../../../../src/api/gen/br
 import { useDataMessage } from "../../../hooks/use-data-message";
 import { useYouTubePlayer } from "../../../hooks/use-youtube-player";
 import type { RoomMetadata, VideoSyncMessage } from "../../../types/room-metadata";
-import { Badge, Button, Stack, Typography } from "../../design-system";
+import { Badge, Button, Divider, Stack, Typography } from "../../design-system";
+import { ProposeTransitionButton } from "../transition/propose-transition-button";
+import { TransitionVotePanel } from "../transition/transition-vote-panel";
 
 type VideoPhaseProps = {
 	metadata: RoomMetadata | null;
@@ -151,7 +153,11 @@ export function VideoPhase({ metadata, roomId }: VideoPhaseProps) {
 		);
 	}
 
-	const hasStarted = playerState === "playing" || playerState === "paused" || playerState === "buffering" || playerState === "ended";
+	const hasStarted =
+		playerState === "playing" ||
+		playerState === "paused" ||
+		playerState === "buffering" ||
+		playerState === "ended";
 
 	const statusLabel =
 		playerState === "playing"
@@ -215,6 +221,20 @@ export function VideoPhase({ metadata, roomId }: VideoPhaseProps) {
 					動画が終了しました。ファシリテーターの操作をお待ちください。
 				</Typography>
 			)}
+
+			{/* Phase transition */}
+			<Divider />
+			<div className="w-full max-w-3xl px-4 py-3">
+				{metadata?.transitionProposal ? (
+					<TransitionVotePanel
+						roomId={roomId}
+						proposal={metadata.transitionProposal}
+						isAdmin={isFacilitator}
+					/>
+				) : (
+					<ProposeTransitionButton roomId={roomId} isAdmin={isFacilitator} disabled={false} />
+				)}
+			</div>
 		</Stack>
 	);
 }

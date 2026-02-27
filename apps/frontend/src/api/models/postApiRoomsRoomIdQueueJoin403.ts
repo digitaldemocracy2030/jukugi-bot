@@ -6,5 +6,5 @@
  */
 
 export type PostApiRoomsRoomIdQueueJoin403 = {
-  error: string;
+	error: string;
 };

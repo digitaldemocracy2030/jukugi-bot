@@ -6,5 +6,5 @@
  */
 
 export type GetApiRoomsRoomIdTransitionProposalsActive404 = {
-  error: string;
+	error: string;
 };

@@ -4,8 +4,8 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { GetApiRoomsStatus } from './getApiRoomsStatus';
+import type { GetApiRoomsStatus } from "./getApiRoomsStatus";
 
 export type GetApiRoomsParams = {
-status?: GetApiRoomsStatus;
+	status?: GetApiRoomsStatus;
 };

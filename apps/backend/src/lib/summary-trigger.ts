@@ -5,7 +5,14 @@
 
 import { and, eq, gt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { discussionSummaries, participants, phases, rooms, sessionParticipations, transcripts } from "../db/schema";
+import {
+	discussionSummaries,
+	participants,
+	phases,
+	rooms,
+	sessionParticipations,
+	transcripts,
+} from "../db/schema";
 import { generateSummaryText } from "./ai";
 import { generateId } from "./id";
 
@@ -90,9 +97,7 @@ export async function generateAndSaveSummary(
 			merged.push({ name, text: t.content });
 		}
 	}
-	const transcriptText = merged
-		.map((m) => `[${m.name}]: ${m.text}`)
-		.join("\n");
+	const transcriptText = merged.map((m) => `[${m.name}]: ${m.text}`).join("\n");
 
 	// 5. Generate summary via LLM
 	const llmResult = await generateSummaryText(existing?.content ?? null, transcriptText);

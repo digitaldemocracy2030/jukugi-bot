@@ -4,21 +4,21 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { PostApiRoomsRoomIdTransitionProposalsProposalIdVotes200ProposedByRole } from './postApiRoomsRoomIdTransitionProposalsProposalIdVotes200ProposedByRole';
-import type { PostApiRoomsRoomIdTransitionProposalsProposalIdVotes200Status } from './postApiRoomsRoomIdTransitionProposalsProposalIdVotes200Status';
+import type { PostApiRoomsRoomIdTransitionProposalsProposalIdVotes200ProposedByRole } from "./postApiRoomsRoomIdTransitionProposalsProposalIdVotes200ProposedByRole";
+import type { PostApiRoomsRoomIdTransitionProposalsProposalIdVotes200Status } from "./postApiRoomsRoomIdTransitionProposalsProposalIdVotes200Status";
 
 export type PostApiRoomsRoomIdTransitionProposalsProposalIdVotes200 = {
-  id: string;
-  fromPhaseId: string;
-  /** @nullable */
-  toPhaseId: string | null;
-  proposedByRole: PostApiRoomsRoomIdTransitionProposalsProposalIdVotes200ProposedByRole;
-  status: PostApiRoomsRoomIdTransitionProposalsProposalIdVotes200Status;
-  yesCount: number;
-  noCount: number;
-  totalVoted: number;
-  requiredThreshold: number;
-  /** @nullable */
-  expiresAt: string | null;
-  createdAt: string;
+	id: string;
+	fromPhaseId: string;
+	/** @nullable */
+	toPhaseId: string | null;
+	proposedByRole: PostApiRoomsRoomIdTransitionProposalsProposalIdVotes200ProposedByRole;
+	status: PostApiRoomsRoomIdTransitionProposalsProposalIdVotes200Status;
+	yesCount: number;
+	noCount: number;
+	totalVoted: number;
+	requiredThreshold: number;
+	/** @nullable */
+	expiresAt: string | null;
+	createdAt: string;
 };

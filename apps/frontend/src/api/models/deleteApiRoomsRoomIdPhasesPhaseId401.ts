@@ -6,5 +6,5 @@
  */
 
 export type DeleteApiRoomsRoomIdPhasesPhaseId401 = {
-  error: string;
+	error: string;
 };

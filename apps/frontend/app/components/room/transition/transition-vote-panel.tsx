@@ -1,27 +1,22 @@
 import { useEffect, useState } from "react";
-import { Alert, Badge, Button, Progress, Stack, Typography } from "~/components/design-system";
-import { useTransitionVote } from "~/hooks/use-transition-vote";
+import { Alert, Badge, Button, Stack, Typography } from "~/components/design-system";
+import { clearStoredVote, getStoredVote, useTransitionVote } from "~/hooks/use-transition-vote";
 import type { RoomMetadata } from "~/types/room-metadata";
 
 interface TransitionVotePanelProps {
 	roomId: string;
 	proposal: NonNullable<RoomMetadata["transitionProposal"]>;
-	participantId: string;
 	isAdmin: boolean;
-	adminKey?: string;
 }
 
-export function TransitionVotePanel({
-	roomId,
-	proposal,
-	participantId,
-	isAdmin,
-	adminKey,
-}: TransitionVotePanelProps) {
-	const { vote, reject, isVoting, isRejecting } = useTransitionVote(roomId, adminKey);
-	const [hasVoted, setHasVoted] = useState(false);
+export function TransitionVotePanel({ roomId, proposal, isAdmin }: TransitionVotePanelProps) {
+	const { vote, reject, isVoting, isRejecting } = useTransitionVote(roomId);
+	const [hasVoted, setHasVoted] = useState(() => getStoredVote(proposal.id) !== null);
+	const [myChoice, setMyChoice] = useState<"yes" | "no" | null>(() => getStoredVote(proposal.id));
 	const [remainingSec, setRemainingSec] = useState<number | null>(null);
+	const [dismissedProposalId, setDismissedProposalId] = useState<string | null>(null);
 
+	// Countdown timer
 	useEffect(() => {
 		if (!proposal.expiresAt || proposal.status !== "open") return;
 		const update = () => {
@@ -36,36 +31,78 @@ export function TransitionVotePanel({
 		return () => clearInterval(timer);
 	}, [proposal.expiresAt, proposal.status]);
 
-	const handleVote = async (choice: "yes" | "no") => {
-		try {
-			await vote(proposal.id, participantId, choice);
-			setHasVoted(true);
-		} catch (e: unknown) {
-			if ((e as { status?: number })?.status === 409) setHasVoted(true);
-		}
+	// Terminal state handling: clear localStorage + auto-dismiss after 3s
+	const isTerminal =
+		proposal.status === "approved" ||
+		proposal.status === "rejected_by_admin" ||
+		proposal.status === "expired";
+
+	useEffect(() => {
+		if (!isTerminal) return;
+		clearStoredVote(proposal.id);
+		const timeout = setTimeout(() => {
+			setDismissedProposalId(proposal.id);
+		}, 3000);
+		return () => clearTimeout(timeout);
+	}, [isTerminal, proposal.id]);
+
+	// If dismissed, hide panel
+	if (dismissedProposalId === proposal.id) return null;
+
+	const handleVote = (choice: "yes" | "no") => {
+		vote(proposal.id, choice);
+		setHasVoted(true);
+		setMyChoice(choice);
 	};
 
-	const handleReject = async () => {
-		try {
-			await reject(proposal.id);
-		} catch {
-			// rejection failure is non-fatal
-		}
+	const handleReject = () => {
+		reject(proposal.id);
 	};
 
+	const thresholdPercent = Math.round(proposal.requiredThreshold * 100);
 	const yesPercent =
 		proposal.totalVoted > 0 ? Math.round((proposal.yesCount / proposal.totalVoted) * 100) : 0;
-	const thresholdPercent = Math.round(proposal.requiredThreshold * 100);
+
+	// ── Terminal states ──
 
 	if (proposal.status === "approved") {
-		return <Alert variant="success">次のフェーズへの移行が決まりました</Alert>;
+		return (
+			<div className="rounded-lg border border-green-300 bg-green-50 dark:bg-green-950/30 p-4">
+				<Stack direction="vertical" gap={2} align="center">
+					<Typography variant="label" className="text-green-700 dark:text-green-300">
+						移行が承認されました
+					</Typography>
+					<Typography variant="body-sm" color="muted">
+						次のフェーズへ移動します...
+					</Typography>
+				</Stack>
+			</div>
+		);
 	}
+
 	if (proposal.status === "rejected_by_admin") {
-		return <Alert variant="destructive">管理者により移行提案が却下されました</Alert>;
+		return <Alert variant="destructive">管理者により却下されました</Alert>;
 	}
+
 	if (proposal.status === "expired") {
-		return <Alert variant="default">投票期限が終了しました（現状維持）</Alert>;
+		return (
+			<Alert variant="default">
+				投票期限が終了しました（賛成: {proposal.yesCount} / 反対: {proposal.noCount}）
+			</Alert>
+		);
 	}
+
+	// Local expiry check
+	const isLocallyExpired = remainingSec !== null && remainingSec <= 0;
+	if (isLocallyExpired) {
+		return (
+			<Alert variant="default">
+				投票期限が終了しました（賛成: {proposal.yesCount} / 反対: {proposal.noCount}）
+			</Alert>
+		);
+	}
+
+	// ── Open proposal ──
 
 	return (
 		<div className="rounded-lg border border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 p-4">
@@ -77,22 +114,51 @@ export function TransitionVotePanel({
 					</Badge>
 				</Stack>
 
-				<Stack direction="horizontal" justify="between">
-					<Typography variant="body-sm" color="muted">
-						賛成: {proposal.yesCount}
-					</Typography>
-					<Typography variant="body-sm" color="muted">
-						反対: {proposal.noCount}
-					</Typography>
-					<Typography variant="body-sm" color="muted">
-						投票数: {proposal.totalVoted}
-					</Typography>
-				</Stack>
+				{/* Vote bars */}
+				<Stack direction="vertical" gap={2}>
+					{/* Yes bar */}
+					<Stack direction="vertical" gap={1}>
+						<Stack direction="horizontal" justify="between" align="center">
+							<Typography variant="body-sm">賛成</Typography>
+							<Typography variant="body-sm" color="muted">
+								{proposal.yesCount}票
+							</Typography>
+						</Stack>
+						<div className="relative h-3 w-full rounded-full bg-muted/30">
+							<div
+								className="h-full rounded-full bg-green-500 transition-all"
+								style={{
+									width: `${proposal.totalVoted > 0 ? Math.round((proposal.yesCount / proposal.totalVoted) * 100) : 0}%`,
+								}}
+							/>
+							{/* Threshold line */}
+							<div
+								className="absolute top-0 h-full w-0.5 bg-foreground/50"
+								style={{ left: `${thresholdPercent}%` }}
+							/>
+						</div>
+					</Stack>
 
-				<Stack direction="vertical" gap={1}>
-					<Progress value={yesPercent} variant="default" size="sm" />
+					{/* No bar */}
+					<Stack direction="vertical" gap={1}>
+						<Stack direction="horizontal" justify="between" align="center">
+							<Typography variant="body-sm">反対</Typography>
+							<Typography variant="body-sm" color="muted">
+								{proposal.noCount}票
+							</Typography>
+						</Stack>
+						<div className="relative h-3 w-full rounded-full bg-muted/30">
+							<div
+								className="h-full rounded-full bg-red-400 transition-all"
+								style={{
+									width: `${proposal.totalVoted > 0 ? Math.round((proposal.noCount / proposal.totalVoted) * 100) : 0}%`,
+								}}
+							/>
+						</div>
+					</Stack>
+
 					<Typography variant="caption" align="right">
-						可決まで: {thresholdPercent}% 必要 (現在 {yesPercent}%)
+						可決ライン: {thresholdPercent}% (現在 {yesPercent}%)
 					</Typography>
 				</Stack>
 
@@ -124,9 +190,11 @@ export function TransitionVotePanel({
 						</Button>
 					</Stack>
 				) : (
-					<Typography variant="caption" align="center">
-						投票済み
-					</Typography>
+					<div className="flex justify-center">
+						<Badge variant="solid" colorScheme={myChoice === "yes" ? "success" : "destructive"}>
+							{myChoice === "yes" ? "賛成に投票済み" : "反対に投票済み"}
+						</Badge>
+					</div>
 				)}
 
 				{isAdmin && (

@@ -9,6 +9,7 @@ import {
 	ScrollRestoration,
 } from "react-router";
 
+import { ToastProvider } from "~/components/design-system";
 import type { Route } from "./+types/root";
 import "./app.css";
 
@@ -59,6 +60,7 @@ export default function App() {
 	return (
 		<QueryClientProvider client={queryClient}>
 			<Outlet />
+			<ToastProvider />
 			{import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
 		</QueryClientProvider>
 	);

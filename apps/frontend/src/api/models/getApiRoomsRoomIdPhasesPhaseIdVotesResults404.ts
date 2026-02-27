@@ -6,5 +6,5 @@
  */
 
 export type GetApiRoomsRoomIdPhasesPhaseIdVotesResults404 = {
-  error: string;
+	error: string;
 };

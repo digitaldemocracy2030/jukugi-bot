@@ -6,7 +6,7 @@
  */
 
 export interface PhaseTransitionResponse {
-  success: boolean;
-  phaseId: string;
-  phaseType: string;
+	success: boolean;
+	phaseId: string;
+	phaseType: string;
 }

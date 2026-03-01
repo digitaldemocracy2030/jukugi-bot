@@ -305,16 +305,10 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 						<TransitionVotePanel
 							roomId={roomId}
 							proposal={metadata.transitionProposal}
-							participantId={myId}
 							isAdmin={isFacilitator}
 						/>
 					) : (
-						<ProposeTransitionButton
-							roomId={roomId}
-							participantId={myId}
-							isAdmin={isFacilitator}
-							disabled={false}
-						/>
+						<ProposeTransitionButton roomId={roomId} isAdmin={isFacilitator} disabled={false} />
 					)}
 				</div>
 			</div>

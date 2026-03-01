@@ -6,7 +6,7 @@
  */
 
 export interface ActivateRoomResponse {
-  success: boolean;
-  roomId: string;
-  livekitRoomName: string;
+	success: boolean;
+	roomId: string;
+	livekitRoomName: string;
 }

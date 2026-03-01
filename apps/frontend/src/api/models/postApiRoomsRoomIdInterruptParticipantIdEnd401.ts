@@ -6,5 +6,5 @@
  */
 
 export type PostApiRoomsRoomIdInterruptParticipantIdEnd401 = {
-  error: string;
+	error: string;
 };

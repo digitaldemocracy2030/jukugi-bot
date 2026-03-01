@@ -4,13 +4,13 @@ import {
 	defineAgent,
 	type JobContext,
 	type JobProcess,
-	llm,
+	type llm,
 	voice,
 	WorkerOptions,
 } from "@livekit/agents";
-import type { RemoteParticipant } from "@livekit/rtc-node";
 import * as deepgram from "@livekit/agents-plugin-deepgram";
 import * as silero from "@livekit/agents-plugin-silero";
+import type { RemoteParticipant } from "@livekit/rtc-node";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://backend:8787";
 const ADMIN_API_KEY = process.env.ADMIN_API_KEY ?? "";
@@ -36,14 +36,9 @@ class Transcriber extends voice.Agent {
 		const transcript = newMessage.textContent ?? "";
 
 		if (transcript.trim()) {
-			console.log(
-				`[transcription-agent] Final turn [${this.participantIdentity}]: ${transcript}`,
-			);
+			console.log(`[transcription-agent] Final turn [${this.participantIdentity}]: ${transcript}`);
 			await persistTranscript(this.roomId, transcript, this.participantIdentity).catch((err) => {
-				console.error(
-					"[transcription-agent] Failed to persist transcript:",
-					err,
-				);
+				console.error("[transcription-agent] Failed to persist transcript:", err);
 			});
 		}
 
@@ -68,10 +63,7 @@ class MultiUserTranscriber {
 
 	start(): void {
 		this.ctx.room.on("participantConnected", this.onParticipantConnected);
-		this.ctx.room.on(
-			"participantDisconnected",
-			this.onParticipantDisconnected,
-		);
+		this.ctx.room.on("participantDisconnected", this.onParticipantDisconnected);
 
 		// Handle already-connected participants
 		for (const p of this.ctx.room.remoteParticipants.values()) {
@@ -81,9 +73,7 @@ class MultiUserTranscriber {
 
 	private onParticipantConnected = (participant: RemoteParticipant): void => {
 		if (this.sessions.has(participant.identity)) return;
-		console.log(
-			`[transcription-agent] Starting session for participant: ${participant.identity}`,
-		);
+		console.log(`[transcription-agent] Starting session for participant: ${participant.identity}`);
 		this.startSession(participant).catch((err) => {
 			console.error(
 				`[transcription-agent] Failed to start session for ${participant.identity}:`,
@@ -92,14 +82,10 @@ class MultiUserTranscriber {
 		});
 	};
 
-	private onParticipantDisconnected = (
-		participant: RemoteParticipant,
-	): void => {
+	private onParticipantDisconnected = (participant: RemoteParticipant): void => {
 		const session = this.sessions.get(participant.identity);
 		if (session) {
-			console.log(
-				`[transcription-agent] Closing session for participant: ${participant.identity}`,
-			);
+			console.log(`[transcription-agent] Closing session for participant: ${participant.identity}`);
 			this.sessions.delete(participant.identity);
 			session.close().catch((err) => {
 				console.error(
@@ -148,9 +134,7 @@ export default defineAgent({
 
 		const roomId = ctx.job.metadata;
 		if (!roomId) {
-			console.error(
-				"[transcription-agent] No roomId in job metadata, exiting.",
-			);
+			console.error("[transcription-agent] No roomId in job metadata, exiting.");
 			return;
 		}
 

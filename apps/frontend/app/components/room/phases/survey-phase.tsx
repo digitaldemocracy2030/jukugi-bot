@@ -110,7 +110,6 @@ function QuestionRenderer({
 
 export function SurveyPhase({ metadata, roomId }: SurveyPhaseProps) {
 	const { localParticipant } = useLocalParticipant();
-	const myId = localParticipant.identity;
 
 	const participantMeta = (() => {
 		try {
@@ -274,16 +273,10 @@ export function SurveyPhase({ metadata, roomId }: SurveyPhaseProps) {
 					<TransitionVotePanel
 						roomId={roomId}
 						proposal={metadata.transitionProposal}
-						participantId={myId}
 						isAdmin={isFacilitator}
 					/>
 				) : (
-					<ProposeTransitionButton
-						roomId={roomId}
-						participantId={myId}
-						isAdmin={isFacilitator}
-						disabled={false}
-					/>
+					<ProposeTransitionButton roomId={roomId} isAdmin={isFacilitator} disabled={false} />
 				)}
 			</div>
 		</div>

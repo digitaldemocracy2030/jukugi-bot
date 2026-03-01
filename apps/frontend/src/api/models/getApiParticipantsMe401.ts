@@ -6,5 +6,5 @@
  */
 
 export type GetApiParticipantsMe401 = {
-  error: string;
+	error: string;
 };

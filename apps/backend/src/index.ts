@@ -113,7 +113,9 @@ export default {
 			const { roomId, phaseId } = msg.body;
 			console.log(`[summary-queue] Processing message: roomId=${roomId}, phaseId=${phaseId}`);
 			if (!phaseId || !env.OPENAI_API_KEY) {
-				console.log(`[summary-queue] Skipping: phaseId=${phaseId}, hasOpenAIKey=${!!env.OPENAI_API_KEY}`);
+				console.log(
+					`[summary-queue] Skipping: phaseId=${phaseId}, hasOpenAIKey=${!!env.OPENAI_API_KEY}`,
+				);
 				msg.ack();
 				continue;
 			}

@@ -5,9 +5,8 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type VotingPhaseType = typeof VotingPhaseType[keyof typeof VotingPhaseType];
-
+export type VotingPhaseType = (typeof VotingPhaseType)[keyof typeof VotingPhaseType];
 
 export const VotingPhaseType = {
-  voting: 'voting',
+	voting: "voting",
 } as const;

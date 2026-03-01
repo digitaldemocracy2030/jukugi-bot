@@ -1,95 +1,114 @@
-import { useState } from "react";
+import axios from "axios";
+import { useToast } from "~/components/design-system";
+import {
+	useDeleteApiRoomsRoomIdTransitionProposalsProposalId,
+	usePostApiRoomsRoomIdTransitionProposals,
+	usePostApiRoomsRoomIdTransitionProposalsProposalIdVotes,
+} from "../../src/api/gen/breakoutDeliberationOSAPI";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8787";
+// ── localStorage helpers ──
 
-interface TransitionProposalResponse {
-	id: string;
-	fromPhaseId: string;
-	toPhaseId: string | null;
-	proposedByRole: "admin" | "participant";
-	status: "open" | "approved" | "rejected_by_admin" | "expired" | "cancelled";
-	yesCount: number;
-	noCount: number;
-	totalVoted: number;
-	requiredThreshold: number;
-	expiresAt: string | null;
-	createdAt: string;
+const VOTE_KEY_PREFIX = "osodp_vote_";
+
+export function getStoredVote(proposalId: string): "yes" | "no" | null {
+	if (typeof window === "undefined") return null;
+	const val = localStorage.getItem(`${VOTE_KEY_PREFIX}${proposalId}`);
+	return val === "yes" || val === "no" ? val : null;
 }
 
-export function useTransitionVote(roomId: string, adminKey?: string) {
-	const [isProposing, setIsProposing] = useState(false);
-	const [isVoting, setIsVoting] = useState(false);
-	const [isRejecting, setIsRejecting] = useState(false);
+function storeVote(proposalId: string, choice: "yes" | "no") {
+	if (typeof window === "undefined") return;
+	localStorage.setItem(`${VOTE_KEY_PREFIX}${proposalId}`, choice);
+}
 
-	const propose = async (_participantId: string, toPhaseId?: string) => {
-		setIsProposing(true);
-		try {
-			const headers: Record<string, string> = {
-				"Content-Type": "application/json",
-			};
-			if (adminKey) headers["X-Admin-Key"] = adminKey;
-			const participantToken =
-				typeof window !== "undefined" ? localStorage.getItem("osodp_participant_token") : null;
-			if (participantToken) headers["X-Participant-Token"] = participantToken;
-			const res = await fetch(`${API_BASE}/api/rooms/${roomId}/transition-proposals`, {
-				method: "POST",
-				headers,
-				body: JSON.stringify({ toPhaseId }),
-			});
-			if (!res.ok) {
-				const err = await res.json().catch(() => ({}));
-				throw { status: res.status, ...err };
-			}
-			return (await res.json()) as TransitionProposalResponse;
-		} finally {
-			setIsProposing(false);
-		}
+export function clearStoredVote(proposalId: string) {
+	if (typeof window === "undefined") return;
+	localStorage.removeItem(`${VOTE_KEY_PREFIX}${proposalId}`);
+}
+
+// ── Error helpers ──
+
+function extractStatus(error: unknown): number | undefined {
+	if (axios.isAxiosError(error)) return error.response?.status;
+	return undefined;
+}
+
+function extractRetryAfter(error: unknown): number | undefined {
+	if (axios.isAxiosError(error)) {
+		const data = error.response?.data as { remainingSec?: number } | undefined;
+		return data?.remainingSec;
+	}
+	return undefined;
+}
+
+// ── Hook ──
+
+export function useTransitionVote(roomId: string) {
+	const { toast } = useToast();
+
+	const proposeMutation = usePostApiRoomsRoomIdTransitionProposals({
+		mutation: {
+			onError: (error: unknown) => {
+				const status = extractStatus(error);
+				if (status === 425) {
+					const retryAfter = extractRetryAfter(error);
+					toast({
+						title: `あと${retryAfter ?? "数"}秒お待ちください`,
+						variant: "warning",
+					});
+				} else if (status === 409) {
+					toast({ title: "既に提案済みです", variant: "warning" });
+				} else {
+					toast({ title: "提案に失敗しました", variant: "destructive" });
+				}
+			},
+		},
+	});
+
+	const voteMutation = usePostApiRoomsRoomIdTransitionProposalsProposalIdVotes({
+		mutation: {
+			onSuccess: (_data, variables) => {
+				storeVote(variables.proposalId, variables.data.choice);
+			},
+			onError: (error: unknown, variables) => {
+				clearStoredVote(variables.proposalId);
+				const status = extractStatus(error);
+				if (status === 409) {
+					// Already voted — keep the voted state
+					storeVote(variables.proposalId, variables.data.choice);
+				} else {
+					toast({ title: "投票に失敗しました", variant: "destructive" });
+				}
+			},
+		},
+	});
+
+	const rejectMutation = useDeleteApiRoomsRoomIdTransitionProposalsProposalId({
+		mutation: {
+			onError: () => {
+				toast({ title: "却下に失敗しました", variant: "destructive" });
+			},
+		},
+	});
+
+	const propose = (toPhaseId?: string) => {
+		proposeMutation.mutate({ roomId, data: { toPhaseId } });
 	};
 
-	const vote = async (proposalId: string, _participantId: string, choice: "yes" | "no") => {
-		setIsVoting(true);
-		try {
-			const headers: Record<string, string> = {
-				"Content-Type": "application/json",
-			};
-			const participantToken =
-				typeof window !== "undefined" ? localStorage.getItem("osodp_participant_token") : null;
-			if (participantToken) headers["X-Participant-Token"] = participantToken;
-			const res = await fetch(
-				`${API_BASE}/api/rooms/${roomId}/transition-proposals/${proposalId}/votes`,
-				{
-					method: "POST",
-					headers,
-					body: JSON.stringify({ choice }),
-				},
-			);
-			if (!res.ok) {
-				const err = await res.json().catch(() => ({}));
-				throw { status: res.status, ...err };
-			}
-			return (await res.json()) as TransitionProposalResponse;
-		} finally {
-			setIsVoting(false);
-		}
+	const vote = (proposalId: string, choice: "yes" | "no") => {
+		voteMutation.mutate({ roomId, proposalId, data: { choice } });
 	};
 
-	const reject = async (proposalId: string) => {
-		setIsRejecting(true);
-		try {
-			const headers: Record<string, string> = {};
-			if (adminKey) headers["X-Admin-Key"] = adminKey;
-			const res = await fetch(
-				`${API_BASE}/api/rooms/${roomId}/transition-proposals/${proposalId}`,
-				{ method: "DELETE", headers },
-			);
-			if (!res.ok) {
-				const err = await res.json().catch(() => ({}));
-				throw { status: res.status, ...err };
-			}
-		} finally {
-			setIsRejecting(false);
-		}
+	const reject = (proposalId: string) => {
+		rejectMutation.mutate({ roomId, proposalId });
 	};
 
-	return { propose, vote, reject, isProposing, isVoting, isRejecting };
+	return {
+		propose,
+		vote,
+		reject,
+		isProposing: proposeMutation.isPending,
+		isVoting: voteMutation.isPending,
+		isRejecting: rejectMutation.isPending,
+	};
 }

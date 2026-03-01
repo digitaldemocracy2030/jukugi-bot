@@ -6,6 +6,6 @@
  */
 
 export interface SurveyAnswerItem {
-  questionId: string;
-  value: string | number;
+	questionId: string;
+	value: string | number;
 }

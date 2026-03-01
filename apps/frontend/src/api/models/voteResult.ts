@@ -6,8 +6,8 @@
  */
 
 export interface VoteResult {
-  id: string;
-  participantId: string;
-  selectedOption: string;
-  createdAt: string;
+	id: string;
+	participantId: string;
+	selectedOption: string;
+	createdAt: string;
 }

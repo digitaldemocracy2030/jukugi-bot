@@ -49,9 +49,13 @@ export function useTranscription(roomId: string): TranscriptionEntry[] {
 	const registeredRef = useRef(false);
 
 	// Fetch persisted final transcripts from the API
-	const { data: apiData } = useGetApiRoomsRoomIdTranscripts(roomId, { finalOnly: "true" }, {
-		query: { staleTime: 30_000 },
-	});
+	const { data: apiData } = useGetApiRoomsRoomIdTranscripts(
+		roomId,
+		{ finalOnly: "true" },
+		{
+			query: { staleTime: 30_000 },
+		},
+	);
 
 	const apiEntries = useMemo<TranscriptionEntry[]>(() => {
 		if (!apiData?.data || !("transcripts" in apiData.data)) return [];

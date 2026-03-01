@@ -6,5 +6,5 @@
  */
 
 export type PostApiRoomsRoomIdPhaseTransition403 = {
-  error: string;
+	error: string;
 };

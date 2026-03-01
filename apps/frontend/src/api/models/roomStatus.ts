@@ -5,12 +5,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type RoomStatus = typeof RoomStatus[keyof typeof RoomStatus];
-
+export type RoomStatus = (typeof RoomStatus)[keyof typeof RoomStatus];
 
 export const RoomStatus = {
-  draft: 'draft',
-  active: 'active',
-  completed: 'completed',
-  archived: 'archived',
+	draft: "draft",
+	active: "active",
+	completed: "completed",
+	archived: "archived",
 } as const;

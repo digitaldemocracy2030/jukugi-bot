@@ -6,7 +6,7 @@
  */
 
 export type SpeakerQueueStateInterruptionsItem = {
-  participantId: string;
-  displayName: string;
-  expiresAt: number;
+	participantId: string;
+	displayName: string;
+	expiresAt: number;
 };

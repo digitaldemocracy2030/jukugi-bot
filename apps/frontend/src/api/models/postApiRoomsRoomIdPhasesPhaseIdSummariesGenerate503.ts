@@ -6,5 +6,5 @@
  */
 
 export type PostApiRoomsRoomIdPhasesPhaseIdSummariesGenerate503 = {
-  error: string;
+	error: string;
 };

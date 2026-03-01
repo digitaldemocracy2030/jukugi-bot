@@ -6,5 +6,5 @@
  */
 
 export type PutApiRoomsRoomIdPhasesReorder404 = {
-  error: string;
+	error: string;
 };

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useGetApiPromptTemplates } from "~/api/gen/breakoutDeliberationOSAPI";
 import type { Phase } from "~/api/models";
 import type { DiscussionPhaseConfig } from "~/api/models/discussionPhaseConfig";
 import type { DiscussionPhaseFeatureFlags } from "~/api/models/discussionPhaseFeatureFlags";
@@ -231,8 +232,50 @@ function DiscussionFields({
 				)}
 			</fieldset>
 
+			<SummarySettingsSection config={config} onConfig={onConfig} />
+
 			<TransitionFlagsSection flags={flags as Record<string, unknown>} onChange={onFlags} />
 		</Stack>
+	);
+}
+
+// ─── AI要約設定 ────────────────────────────────────────────────────────────────
+function SummarySettingsSection({
+	config,
+	onConfig,
+}: {
+	config: DiscussionPhaseConfig;
+	onConfig: (key: string, value: unknown) => void;
+}) {
+	const { data: templatesResponse } = useGetApiPromptTemplates();
+	const templates = templatesResponse?.data ?? [];
+
+	return (
+		<fieldset className="space-y-3 rounded-lg border px-4 py-3">
+			<legend className="text-xs font-medium text-muted-foreground px-1">AI要約設定</legend>
+			<FormField label="要約モデル">
+				<Input
+					value={config.summaryModel ?? ""}
+					onChange={(e) => onConfig("summaryModel", e.target.value || undefined)}
+					placeholder="gpt-4o-mini"
+				/>
+			</FormField>
+			<FormField label="プロンプトテンプレート">
+				<Select
+					value={config.summaryPromptTemplateId ?? ""}
+					onValueChange={(val) => onConfig("summaryPromptTemplateId", val || undefined)}
+					options={[
+						{ value: "", label: "デフォルト" },
+						...templates.map((t) => ({ value: t.id, label: t.name })),
+					]}
+				/>
+			</FormField>
+			<Checkbox
+				checked={Boolean(config.summaryGraphEnabled)}
+				onCheckedChange={(checked) => onConfig("summaryGraphEnabled", checked)}
+				label="要約グラフを有効化"
+			/>
+		</fieldset>
 	);
 }
 

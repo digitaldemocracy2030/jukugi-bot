@@ -6,5 +6,5 @@
  */
 
 export type PatchApiRoomsRoomIdPhasesPhaseId404 = {
-  error: string;
+	error: string;
 };

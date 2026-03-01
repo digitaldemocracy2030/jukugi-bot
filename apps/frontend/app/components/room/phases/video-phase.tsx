@@ -151,7 +151,11 @@ export function VideoPhase({ metadata, roomId }: VideoPhaseProps) {
 		);
 	}
 
-	const hasStarted = playerState === "playing" || playerState === "paused" || playerState === "buffering" || playerState === "ended";
+	const hasStarted =
+		playerState === "playing" ||
+		playerState === "paused" ||
+		playerState === "buffering" ||
+		playerState === "ended";
 
 	const statusLabel =
 		playerState === "playing"

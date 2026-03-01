@@ -220,6 +220,23 @@ export const surveyResponses = sqliteTable(
 	],
 );
 
+/** Prompt templates for AI summary customization */
+export const promptTemplates = sqliteTable("prompt_templates", {
+	id: text("id").primaryKey(),
+	name: text("name").notNull(),
+	description: text("description"),
+	systemPrompt: text("system_prompt").notNull(),
+	userPromptTemplate: text("user_prompt_template").notNull(),
+	language: text("language").notNull().default("ja"),
+	isDefault: integer("is_default", { mode: "boolean" }).notNull().default(false),
+	createdAt: integer("created_at", { mode: "timestamp" })
+		.$defaultFn(() => new Date())
+		.notNull(),
+	updatedAt: integer("updated_at", { mode: "timestamp" })
+		.$defaultFn(() => new Date())
+		.notNull(),
+});
+
 /** Discussion summaries — one summary per room+phase, overwritten on each update */
 export const discussionSummaries = sqliteTable(
 	"discussion_summaries",

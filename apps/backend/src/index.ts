@@ -7,6 +7,7 @@ import { generateAndSaveSummary } from "./lib/summary-trigger";
 import { initLiveKit } from "./livekit/room-service";
 import participantsRoute from "./routes/participants";
 import phasesRoute from "./routes/phases";
+import promptTemplatesRoute from "./routes/prompt-templates";
 import recordingRoute from "./routes/recording";
 import roomsRoute from "./routes/rooms";
 import sessionRoute from "./routes/session";
@@ -66,6 +67,7 @@ app.get("/", (c) => c.json({ message: "Hello Hono!" }));
 app.route("/", participantsRoute);
 app.route("/", roomsRoute);
 app.route("/", phasesRoute);
+app.route("/", promptTemplatesRoute);
 app.route("/", sessionRoute);
 app.route("/", speakingRoute);
 app.route("/", recordingRoute);
@@ -113,7 +115,9 @@ export default {
 			const { roomId, phaseId } = msg.body;
 			console.log(`[summary-queue] Processing message: roomId=${roomId}, phaseId=${phaseId}`);
 			if (!phaseId || !env.OPENAI_API_KEY) {
-				console.log(`[summary-queue] Skipping: phaseId=${phaseId}, hasOpenAIKey=${!!env.OPENAI_API_KEY}`);
+				console.log(
+					`[summary-queue] Skipping: phaseId=${phaseId}, hasOpenAIKey=${!!env.OPENAI_API_KEY}`,
+				);
 				msg.ack();
 				continue;
 			}

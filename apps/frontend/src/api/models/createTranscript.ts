@@ -6,19 +6,19 @@
  */
 
 export interface CreateTranscript {
-  participantId?: string;
-  phaseId?: string;
-  /** @minLength 1 */
-  content: string;
-  language?: string;
-  /**
-   * @minimum 0
-   * @maximum 1
-   */
-  confidence?: number;
-  isFinal?: boolean;
-  /** @minimum 0 */
-  startOffsetMs?: number;
-  /** @minimum 0 */
-  endOffsetMs?: number;
+	participantId?: string;
+	phaseId?: string;
+	/** @minLength 1 */
+	content: string;
+	language?: string;
+	/**
+	 * @minimum 0
+	 * @maximum 1
+	 */
+	confidence?: number;
+	isFinal?: boolean;
+	/** @minimum 0 */
+	startOffsetMs?: number;
+	/** @minimum 0 */
+	endOffsetMs?: number;
 }

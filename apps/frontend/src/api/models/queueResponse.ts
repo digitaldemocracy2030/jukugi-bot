@@ -4,9 +4,9 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { SpeakerQueueState } from './speakerQueueState';
+import type { SpeakerQueueState } from "./speakerQueueState";
 
 export interface QueueResponse {
-  success: boolean;
-  speakerQueue: SpeakerQueueState;
+	success: boolean;
+	speakerQueue: SpeakerQueueState;
 }

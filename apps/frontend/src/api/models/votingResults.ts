@@ -4,9 +4,9 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { VotingResultsResults } from './votingResultsResults';
+import type { VotingResultsResults } from "./votingResultsResults";
 
 export interface VotingResults {
-  totalVotes: number;
-  results: VotingResultsResults;
+	totalVotes: number;
+	results: VotingResultsResults;
 }

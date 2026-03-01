@@ -48,10 +48,15 @@ export const listPromptTemplatesRoute = createRoute({
 	path: "/api/prompt-templates",
 	tags: ["PromptTemplates"],
 	summary: "List all prompt templates",
+	security: [{ AdminKeyAuth: [] }],
 	responses: {
 		200: {
 			content: { "application/json": { schema: z.array(PromptTemplateSchema) } },
 			description: "Prompt template list",
+		},
+		401: {
+			content: { "application/json": { schema: z.object({ error: z.string() }) } },
+			description: "Unauthorized",
 		},
 	},
 });
@@ -61,6 +66,7 @@ export const getPromptTemplateRoute = createRoute({
 	path: "/api/prompt-templates/{templateId}",
 	tags: ["PromptTemplates"],
 	summary: "Get a prompt template by ID",
+	security: [{ AdminKeyAuth: [] }],
 	request: {
 		params: PromptTemplateParamsSchema,
 	},
@@ -68,6 +74,10 @@ export const getPromptTemplateRoute = createRoute({
 		200: {
 			content: { "application/json": { schema: PromptTemplateSchema } },
 			description: "Prompt template found",
+		},
+		401: {
+			content: { "application/json": { schema: z.object({ error: z.string() }) } },
+			description: "Unauthorized",
 		},
 		404: {
 			content: {

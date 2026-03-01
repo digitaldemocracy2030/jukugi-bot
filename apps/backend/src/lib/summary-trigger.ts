@@ -13,7 +13,7 @@ import {
 	sessionParticipations,
 	transcripts,
 } from "../db/schema";
-import type { DiscussionPhaseConfig } from "../schemas/phase.schema";
+import { DiscussionPhaseConfigSchema } from "../schemas/phase.schema";
 import type { SummaryOptions } from "./ai";
 import { generateSummaryText } from "./ai";
 import { generateId } from "./id";
@@ -106,7 +106,8 @@ export async function generateAndSaveSummary(
 	const summaryOptions: SummaryOptions = {};
 	const phase = await db.select().from(phases).where(eq(phases.id, phaseId)).get();
 	if (phase) {
-		const config = phase.config as DiscussionPhaseConfig | null;
+		const parsed = DiscussionPhaseConfigSchema.safeParse(phase.config);
+		const config = parsed.success ? parsed.data : null;
 		if (config?.summaryModel) {
 			summaryOptions.modelId = config.summaryModel;
 		}

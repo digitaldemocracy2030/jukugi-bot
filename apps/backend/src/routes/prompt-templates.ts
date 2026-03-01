@@ -28,14 +28,15 @@ function formatTemplate(t: typeof promptTemplates.$inferSelect) {
 	};
 }
 
-// GET /api/prompt-templates (public)
+// GET /api/prompt-templates (admin)
+app.use("/api/prompt-templates", adminAuth);
 app.openapi(listPromptTemplatesRoute, async (c) => {
 	const db = drizzle(c.env.DB);
 	const all = await db.select().from(promptTemplates).all();
 	return c.json(all.map(formatTemplate), 200);
 });
 
-// GET /api/prompt-templates/:templateId (public)
+// GET /api/prompt-templates/:templateId (admin — covered by :templateId middleware below)
 app.openapi(getPromptTemplateRoute, async (c) => {
 	const db = drizzle(c.env.DB);
 	const { templateId } = c.req.valid("param");
@@ -50,8 +51,7 @@ app.openapi(getPromptTemplateRoute, async (c) => {
 	return c.json(formatTemplate(template), 200);
 });
 
-// POST /api/prompt-templates (admin)
-app.use("/api/prompt-templates", adminAuth);
+// POST /api/prompt-templates (admin — covered by base path middleware above)
 app.openapi(createPromptTemplateRoute, async (c) => {
 	const db = drizzle(c.env.DB);
 	const body = c.req.valid("json");
@@ -128,6 +128,10 @@ app.openapi(updatePromptTemplateRoute, async (c) => {
 		.where(eq(promptTemplates.id, templateId))
 		.returning()
 		.get();
+
+	if (!updated) {
+		return c.json({ error: "Prompt template not found" }, 404);
+	}
 
 	return c.json(formatTemplate(updated), 200);
 });

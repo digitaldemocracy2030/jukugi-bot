@@ -5,6 +5,6 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type PostApiRoomsRoomIdActivate401 = {
+export type PostApiRoomsRoomIdQueueEndSpeaking404 = {
 	error: string;
 };

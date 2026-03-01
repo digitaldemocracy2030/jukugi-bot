@@ -6,14 +6,14 @@
  */
 
 export interface VideoPhaseFeatureFlags {
-  participantCanProposeTransition?: boolean;
-  /** @minimum 0 */
-  transitionMinDurationSec?: number;
-  /**
-   * @minimum 0
-   * @maximum 1
-   */
-  transitionThreshold?: number;
-  /** @exclusiveMinimum 0 */
-  transitionVoteDurationSec?: number;
+	participantCanProposeTransition?: boolean;
+	/** @minimum 0 */
+	transitionMinDurationSec?: number;
+	/**
+	 * @minimum 0
+	 * @maximum 1
+	 */
+	transitionThreshold?: number;
+	/** @exclusiveMinimum 0 */
+	transitionVoteDurationSec?: number;
 }

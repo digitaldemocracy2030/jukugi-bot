@@ -4,8 +4,8 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { DiscussionSummary } from './discussionSummary';
+import type { DiscussionSummary } from "./discussionSummary";
 
 export interface LatestSummaryResponse {
-  summary: DiscussionSummary & (unknown | null);
+	summary: DiscussionSummary & (unknown | null);
 }

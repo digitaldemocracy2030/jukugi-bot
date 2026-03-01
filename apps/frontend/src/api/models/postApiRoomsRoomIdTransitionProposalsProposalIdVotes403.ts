@@ -6,5 +6,5 @@
  */
 
 export type PostApiRoomsRoomIdTransitionProposalsProposalIdVotes403 = {
-  error: string;
+	error: string;
 };

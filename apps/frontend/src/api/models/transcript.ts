@@ -6,20 +6,22 @@
  */
 
 export interface Transcript {
-  id: string;
-  roomId: string;
-  /** @nullable */
-  participantId: string | null;
-  /** @nullable */
-  phaseId: string | null;
-  content: string;
-  language: string;
-  /** @nullable */
-  confidence: number | null;
-  isFinal: boolean;
-  /** @nullable */
-  startOffsetMs: number | null;
-  /** @nullable */
-  endOffsetMs: number | null;
-  createdAt: string;
+	id: string;
+	roomId: string;
+	/** @nullable */
+	participantId: string | null;
+	/** @nullable */
+	displayName: string | null;
+	/** @nullable */
+	phaseId: string | null;
+	content: string;
+	language: string;
+	/** @nullable */
+	confidence: number | null;
+	isFinal: boolean;
+	/** @nullable */
+	startOffsetMs: number | null;
+	/** @nullable */
+	endOffsetMs: number | null;
+	createdAt: string;
 }

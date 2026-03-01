@@ -6,5 +6,5 @@
  */
 
 export interface SurveyResponseSummary {
-  totalResponses: number;
+	totalResponses: number;
 }

@@ -9,6 +9,6 @@
  * @nullable
  */
 export type SpeakerQueueStateCurrentSpeaker = {
-  participantId: string;
-  speakingUntil: number;
+	participantId: string;
+	speakingUntil: number;
 } | null;

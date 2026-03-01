@@ -6,5 +6,5 @@
  */
 
 export interface CreateTranscriptResponse {
-  transcriptId: string;
+	transcriptId: string;
 }

@@ -4,6 +4,7 @@ import {
 	useDeleteApiRoomsRoomIdQueueLeave,
 	usePostApiRoomsRoomIdInterrupt,
 	usePostApiRoomsRoomIdInterruptParticipantIdEnd,
+	usePostApiRoomsRoomIdQueueEndSpeaking,
 	usePostApiRoomsRoomIdQueueJoin,
 } from "../../../../src/api/gen/breakoutDeliberationOSAPI";
 import { useSpeakingCheck } from "../../../hooks/use-speaking-check";
@@ -70,6 +71,7 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 
 	const joinQueueMutation = usePostApiRoomsRoomIdQueueJoin();
 	const leaveQueueMutation = useDeleteApiRoomsRoomIdQueueLeave();
+	const endSpeakingMutation = usePostApiRoomsRoomIdQueueEndSpeaking();
 	const interruptMutation = usePostApiRoomsRoomIdInterrupt();
 	const endInterruptionMutation = usePostApiRoomsRoomIdInterruptParticipantIdEnd();
 
@@ -167,6 +169,8 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 								speakerName={
 									isCurrentSpeaker ? `${currentSpeakerName}（あなた）` : currentSpeakerName
 								}
+								canEndSpeaking={isCurrentSpeaker && !endSpeakingMutation.isPending}
+								onEndSpeaking={() => endSpeakingMutation.mutate({ roomId })}
 							/>
 						) : (
 							<Typography variant="body" color="muted">

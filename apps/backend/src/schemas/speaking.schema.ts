@@ -282,6 +282,35 @@ export const interruptEndRoute = createRoute({
 	},
 });
 
+export const queueEndSpeakingRoute = createRoute({
+	method: "post",
+	path: "/api/rooms/{roomId}/queue/end-speaking",
+	tags: ["Speaking Queue"],
+	summary: "End own speaking turn early",
+	security: [{ ParticipantTokenAuth: [] }],
+	request: {
+		params: RoomIdParams,
+	},
+	responses: {
+		200: {
+			content: { "application/json": { schema: QueueResponseSchema } },
+			description: "Speaking turn ended",
+		},
+		401: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Unauthorized",
+		},
+		403: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Not the current speaker or room not active",
+		},
+		404: {
+			content: { "application/json": { schema: ErrorSchema } },
+			description: "Room not found",
+		},
+	},
+});
+
 export const speakingCheckRoute = createRoute({
 	method: "post",
 	path: "/api/rooms/{roomId}/speaking/check",

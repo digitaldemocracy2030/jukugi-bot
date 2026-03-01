@@ -5,11 +5,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type RecordingStatus = typeof RecordingStatus[keyof typeof RecordingStatus];
-
+export type RecordingStatus = (typeof RecordingStatus)[keyof typeof RecordingStatus];
 
 export const RecordingStatus = {
-  recording: 'recording',
-  completed: 'completed',
-  failed: 'failed',
+	recording: "recording",
+	completed: "completed",
+	failed: "failed",
 } as const;

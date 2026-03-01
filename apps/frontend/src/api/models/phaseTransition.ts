@@ -6,6 +6,6 @@
  */
 
 export interface PhaseTransition {
-  /** @minLength 1 */
-  phaseId: string;
+	/** @minLength 1 */
+	phaseId: string;
 }

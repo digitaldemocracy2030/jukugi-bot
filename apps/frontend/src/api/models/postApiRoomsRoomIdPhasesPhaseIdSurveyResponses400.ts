@@ -6,5 +6,5 @@
  */
 
 export type PostApiRoomsRoomIdPhasesPhaseIdSurveyResponses400 = {
-  error: string;
+	error: string;
 };

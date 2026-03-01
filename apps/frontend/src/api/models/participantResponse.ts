@@ -6,7 +6,7 @@
  */
 
 export interface ParticipantResponse {
-  id: string;
-  displayName: string;
-  recoveryCode: string;
+	id: string;
+	displayName: string;
+	recoveryCode: string;
 }

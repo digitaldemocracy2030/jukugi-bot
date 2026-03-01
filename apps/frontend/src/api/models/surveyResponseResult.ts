@@ -4,11 +4,11 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { SurveyAnswerItem } from './surveyAnswerItem';
+import type { SurveyAnswerItem } from "./surveyAnswerItem";
 
 export interface SurveyResponseResult {
-  id: string;
-  participantId: string;
-  answers: SurveyAnswerItem[];
-  createdAt: string;
+	id: string;
+	participantId: string;
+	answers: SurveyAnswerItem[];
+	createdAt: string;
 }

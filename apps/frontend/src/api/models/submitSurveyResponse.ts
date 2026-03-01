@@ -4,9 +4,9 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-import type { SurveyAnswerItem } from './surveyAnswerItem';
+import type { SurveyAnswerItem } from "./surveyAnswerItem";
 
 export interface SubmitSurveyResponse {
-  /** @minItems 1 */
-  answers: SurveyAnswerItem[];
+	/** @minItems 1 */
+	answers: SurveyAnswerItem[];
 }

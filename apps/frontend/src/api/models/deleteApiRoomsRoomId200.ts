@@ -6,5 +6,5 @@
  */
 
 export type DeleteApiRoomsRoomId200 = {
-  success: boolean;
+	success: boolean;
 };

@@ -5,9 +5,8 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type VideoPhaseType = typeof VideoPhaseType[keyof typeof VideoPhaseType];
-
+export type VideoPhaseType = (typeof VideoPhaseType)[keyof typeof VideoPhaseType];
 
 export const VideoPhaseType = {
-  video: 'video',
+	video: "video",
 } as const;

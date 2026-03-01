@@ -4,7 +4,7 @@
  * Breakout Deliberation OS API
  * OpenAPI spec version: 1.0.0
  */
-
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
 	DataTag,
 	DefinedInitialDataOptions,
@@ -19,10 +19,7 @@ import type {
 	UseQueryOptions,
 	UseQueryResult,
 } from "@tanstack/react-query";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import type { BodyType, ErrorType } from "../custom-fetch";
 
-import { customFetch } from "../custom-fetch";
 import type {
 	ActivateRoomResponse,
 	CreateParticipant,
@@ -96,6 +93,10 @@ import type {
 	PostApiRoomsRoomIdJoin403,
 	PostApiRoomsRoomIdJoin404,
 	PostApiRoomsRoomIdJoin422,
+	PostApiRoomsRoomIdPhaseTransition401,
+	PostApiRoomsRoomIdPhaseTransition403,
+	PostApiRoomsRoomIdPhaseTransition404,
+	PostApiRoomsRoomIdPhaseTransition422,
 	PostApiRoomsRoomIdPhases401,
 	PostApiRoomsRoomIdPhases404,
 	PostApiRoomsRoomIdPhases422,
@@ -109,10 +110,6 @@ import type {
 	PostApiRoomsRoomIdPhasesPhaseIdVotes400,
 	PostApiRoomsRoomIdPhasesPhaseIdVotes404,
 	PostApiRoomsRoomIdPhasesPhaseIdVotes409,
-	PostApiRoomsRoomIdPhaseTransition401,
-	PostApiRoomsRoomIdPhaseTransition403,
-	PostApiRoomsRoomIdPhaseTransition404,
-	PostApiRoomsRoomIdPhaseTransition422,
 	PostApiRoomsRoomIdQueueEndSpeaking401,
 	PostApiRoomsRoomIdQueueEndSpeaking403,
 	PostApiRoomsRoomIdQueueEndSpeaking404,
@@ -180,6 +177,8 @@ import type {
 	VotingResults,
 } from "../models";
 
+import { customFetch } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**

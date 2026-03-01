@@ -7,7 +7,7 @@
 		"dev": "react-router dev",
 		"start": "react-router-serve ./build/server/index.js",
 		"typecheck": "react-router typegen && tsc",
-		"generate:api": "orval --config ./orval.config.ts"
+		"generate:api": "orval --config ./orval.config.ts && biome format --write src/api/gen src/api/models"
 	},
 	"dependencies": {
 		"@fontsource/geist-mono": "^5.2.7",

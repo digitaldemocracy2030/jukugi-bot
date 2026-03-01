@@ -5,12 +5,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type UpdatePhaseType = typeof UpdatePhaseType[keyof typeof UpdatePhaseType];
-
+export type UpdatePhaseType = (typeof UpdatePhaseType)[keyof typeof UpdatePhaseType];
 
 export const UpdatePhaseType = {
-  video: 'video',
-  discussion: 'discussion',
-  voting: 'voting',
-  survey: 'survey',
+	video: "video",
+	discussion: "discussion",
+	voting: "voting",
+	survey: "survey",
 } as const;

@@ -6,8 +6,8 @@
  */
 
 export interface JoinRoomResponse {
-  token: string;
-  livekitUrl: string;
-  participantId: string;
-  roomId: string;
+	token: string;
+	livekitUrl: string;
+	participantId: string;
+	roomId: string;
 }

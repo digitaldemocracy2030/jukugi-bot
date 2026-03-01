@@ -6,16 +6,16 @@
  */
 
 export interface DiscussionSummary {
-  id: string;
-  roomId: string;
-  phaseId: string;
-  content: string;
-  model: string;
-  /** @nullable */
-  promptTokens: number | null;
-  /** @nullable */
-  completionTokens: number | null;
-  transcriptCount: number;
-  createdAt: string;
-  updatedAt: string;
+	id: string;
+	roomId: string;
+	phaseId: string;
+	content: string;
+	model: string;
+	/** @nullable */
+	promptTokens: number | null;
+	/** @nullable */
+	completionTokens: number | null;
+	transcriptCount: number;
+	createdAt: string;
+	updatedAt: string;
 }

@@ -6,5 +6,5 @@
  */
 
 export type PostApiRooms401 = {
-  error: string;
+	error: string;
 };

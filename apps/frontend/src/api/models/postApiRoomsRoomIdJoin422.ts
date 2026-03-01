@@ -6,6 +6,6 @@
  */
 
 export type PostApiRoomsRoomIdJoin422 = {
-  error: string;
-  details?: unknown | null;
+	error: string;
+	details?: unknown | null;
 };

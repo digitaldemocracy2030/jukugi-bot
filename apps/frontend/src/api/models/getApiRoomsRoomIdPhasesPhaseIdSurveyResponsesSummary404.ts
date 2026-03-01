@@ -6,5 +6,5 @@
  */
 
 export type GetApiRoomsRoomIdPhasesPhaseIdSurveyResponsesSummary404 = {
-  error: string;
+	error: string;
 };

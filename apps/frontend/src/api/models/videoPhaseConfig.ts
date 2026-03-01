@@ -6,6 +6,6 @@
  */
 
 export interface VideoPhaseConfig {
-  videoUrl?: string;
-  autoAdvance?: boolean;
+	videoUrl?: string;
+	autoAdvance?: boolean;
 }

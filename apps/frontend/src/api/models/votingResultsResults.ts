@@ -5,4 +5,4 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type VotingResultsResults = {[key: string]: number};
+export type VotingResultsResults = { [key: string]: number };

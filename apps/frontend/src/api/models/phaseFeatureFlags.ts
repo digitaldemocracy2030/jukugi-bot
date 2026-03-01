@@ -6,25 +6,25 @@
  */
 
 export interface PhaseFeatureFlags {
-  canSpeak?: boolean;
-  canInterrupt?: boolean;
-  canVote?: boolean;
-  /** @exclusiveMinimum 0 */
-  speakingTimeSec?: number;
-  /** @exclusiveMinimum 0 */
-  interruptionTimeSec?: number;
-  /** @exclusiveMinimum 0 */
-  interruptionCooldownSec?: number;
-  /** @exclusiveMinimum 0 */
-  maxInterruptions?: number;
-  participantCanProposeTransition?: boolean;
-  /** @minimum 0 */
-  transitionMinDurationSec?: number;
-  /**
-   * @minimum 0
-   * @maximum 1
-   */
-  transitionThreshold?: number;
-  /** @exclusiveMinimum 0 */
-  transitionVoteDurationSec?: number;
+	canSpeak?: boolean;
+	canInterrupt?: boolean;
+	canVote?: boolean;
+	/** @exclusiveMinimum 0 */
+	speakingTimeSec?: number;
+	/** @exclusiveMinimum 0 */
+	interruptionTimeSec?: number;
+	/** @exclusiveMinimum 0 */
+	interruptionCooldownSec?: number;
+	/** @exclusiveMinimum 0 */
+	maxInterruptions?: number;
+	participantCanProposeTransition?: boolean;
+	/** @minimum 0 */
+	transitionMinDurationSec?: number;
+	/**
+	 * @minimum 0
+	 * @maximum 1
+	 */
+	transitionThreshold?: number;
+	/** @exclusiveMinimum 0 */
+	transitionVoteDurationSec?: number;
 }

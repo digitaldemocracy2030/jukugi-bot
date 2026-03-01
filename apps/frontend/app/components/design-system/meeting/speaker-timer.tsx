@@ -111,7 +111,7 @@ const SpeakerTimer = forwardRef<HTMLDivElement, SpeakerTimerProps>(
 						onClick={onEndSpeaking}
 						className="text-xs text-destructive hover:text-destructive/80 font-medium transition-colors"
 					>
-						End speaking
+						発言を終了する
 					</button>
 				)}
 			</div>

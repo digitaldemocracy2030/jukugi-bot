@@ -15,6 +15,7 @@ import { type ParticipantRoomVariables, participantRoomAuth } from "../middlewar
 import {
 	interruptEndRoute,
 	interruptRequestRoute,
+	queueEndSpeakingRoute,
 	queueJoinRoute,
 	queueLeaveRoute,
 	queueNextRoute,
@@ -491,6 +492,39 @@ app.openapi(interruptEndRoute, async (c) => {
 		...speakerQueue,
 		interruptions: speakerQueue.interruptions.filter((i) => i.participantId !== participantId),
 	};
+
+	const updated = updateSpeakerQueue(meta, newQueue);
+	await updateRoomMetadata(livekitRoomName(roomId), serializeMetadata(updated));
+	return c.json({ success: true, speakerQueue: newQueue }, 200);
+});
+
+// ─── POST /api/rooms/:roomId/queue/end-speaking ──────────────────────────────
+// Allows the current speaker to voluntarily end their turn early
+
+app.use("/api/rooms/:roomId/queue/end-speaking", participantRoomAuth);
+app.openapi(queueEndSpeakingRoute, async (c) => {
+	const { roomId } = c.req.valid("param");
+	const participantId = c.get("participant").id;
+
+	const db = drizzle(c.env.DB);
+	const room = await db.select().from(rooms).where(eq(rooms.id, roomId)).get();
+	if (!room) return c.json({ error: "Room not found" }, 404);
+	if (room.status !== "active") return c.json({ error: "Room is not active" }, 403);
+
+	const meta = await fetchRoomMetadata(livekitRoomName(roomId));
+	if (!meta) return c.json({ error: "Room metadata not found" }, 404);
+
+	// Only the current speaker can end their own turn
+	if (meta.speakerQueue.currentSpeaker?.participantId !== participantId) {
+		return c.json({ error: "You are not the current speaker" }, 403);
+	}
+
+	const phase = meta.currentPhaseId
+		? await db.select().from(phases).where(eq(phases.id, meta.currentPhaseId)).get()
+		: null;
+	const speakingTimeSec = phase?.featureFlags?.speakingTimeSec ?? DEFAULT_SPEAKING_TIME_SEC;
+
+	const newQueue = await advanceToNextSpeaker(db, livekitRoomName(roomId), meta, speakingTimeSec);
 
 	const updated = updateSpeakerQueue(meta, newQueue);
 	await updateRoomMetadata(livekitRoomName(roomId), serializeMetadata(updated));

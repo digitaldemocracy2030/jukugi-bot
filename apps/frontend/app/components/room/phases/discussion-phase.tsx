@@ -169,7 +169,7 @@ export function DiscussionPhase({ metadata, roomId }: DiscussionPhaseProps) {
 								speakerName={
 									isCurrentSpeaker ? `${currentSpeakerName}（あなた）` : currentSpeakerName
 								}
-								canEndSpeaking={isCurrentSpeaker}
+								canEndSpeaking={isCurrentSpeaker && !endSpeakingMutation.isPending}
 								onEndSpeaking={() => endSpeakingMutation.mutate({ roomId })}
 							/>
 						) : (

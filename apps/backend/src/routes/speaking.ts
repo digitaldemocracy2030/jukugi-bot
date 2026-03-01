@@ -514,6 +514,10 @@ app.openapi(queueEndSpeakingRoute, async (c) => {
 	const meta = await fetchRoomMetadata(livekitRoomName(roomId));
 	if (!meta) return c.json({ error: "Room metadata not found" }, 404);
 
+	if (!meta.featureFlags.canSpeak) {
+		return c.json({ error: "Speaking is not allowed in the current phase" }, 403);
+	}
+
 	// Only the current speaker can end their own turn
 	if (meta.speakerQueue.currentSpeaker?.participantId !== participantId) {
 		return c.json({ error: "You are not the current speaker" }, 403);

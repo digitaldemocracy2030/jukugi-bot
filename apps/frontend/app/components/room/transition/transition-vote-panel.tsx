@@ -11,10 +11,21 @@ interface TransitionVotePanelProps {
 
 export function TransitionVotePanel({ roomId, proposal, isAdmin }: TransitionVotePanelProps) {
 	const { vote, reject, isVoting, isRejecting } = useTransitionVote(roomId);
-	const [hasVoted, setHasVoted] = useState(() => getStoredVote(proposal.id) !== null);
-	const [myChoice, setMyChoice] = useState<"yes" | "no" | null>(() => getStoredVote(proposal.id));
+	const [storedChoice, setStoredChoice] = useState<"yes" | "no" | null>(() =>
+		getStoredVote(proposal.id),
+	);
 	const [remainingSec, setRemainingSec] = useState<number | null>(null);
 	const [dismissedProposalId, setDismissedProposalId] = useState<string | null>(null);
+
+	// Re-sync from localStorage when voting finishes (success or 409)
+	useEffect(() => {
+		if (!isVoting) {
+			setStoredChoice(getStoredVote(proposal.id));
+		}
+	}, [isVoting, proposal.id]);
+
+	const hasVoted = storedChoice !== null;
+	const myChoice = storedChoice;
 
 	// Countdown timer
 	useEffect(() => {
@@ -51,8 +62,6 @@ export function TransitionVotePanel({ roomId, proposal, isAdmin }: TransitionVot
 
 	const handleVote = (choice: "yes" | "no") => {
 		vote(proposal.id, choice);
-		setHasVoted(true);
-		setMyChoice(choice);
 	};
 
 	const handleReject = () => {

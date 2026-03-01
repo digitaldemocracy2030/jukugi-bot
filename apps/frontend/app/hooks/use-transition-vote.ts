@@ -35,8 +35,8 @@ function extractStatus(error: unknown): number | undefined {
 
 function extractRetryAfter(error: unknown): number | undefined {
 	if (axios.isAxiosError(error)) {
-		const data = error.response?.data as { retryAfter?: number } | undefined;
-		return data?.retryAfter;
+		const data = error.response?.data as { remainingSec?: number } | undefined;
+		return data?.remainingSec;
 	}
 	return undefined;
 }
@@ -67,10 +67,15 @@ export function useTransitionVote(roomId: string) {
 
 	const voteMutation = usePostApiRoomsRoomIdTransitionProposalsProposalIdVotes({
 		mutation: {
-			onError: (error: unknown) => {
+			onSuccess: (_data, variables) => {
+				storeVote(variables.proposalId, variables.data.choice);
+			},
+			onError: (error: unknown, variables) => {
+				clearStoredVote(variables.proposalId);
 				const status = extractStatus(error);
 				if (status === 409) {
-					toast({ title: "既に投票済みです", variant: "warning" });
+					// Already voted — keep the voted state
+					storeVote(variables.proposalId, variables.data.choice);
 				} else {
 					toast({ title: "投票に失敗しました", variant: "destructive" });
 				}
@@ -91,7 +96,6 @@ export function useTransitionVote(roomId: string) {
 	};
 
 	const vote = (proposalId: string, choice: "yes" | "no") => {
-		storeVote(proposalId, choice);
 		voteMutation.mutate({ roomId, proposalId, data: { choice } });
 	};
 
